@@ -7,9 +7,15 @@ import App from './App.vue'
 import routes from './routes.js'
 import store from './store.js'
 
+import './vuetify.min.css'
+
 Vue.use(VueRouter)
 Vue.use(VueMeta)
-Vue.use(Vuetify)
+Vue.use(Vuetify, {
+  theme: {
+    primary: '#000'
+  }
+})
 
 const router = new VueRouter({ routes: routes, mode: 'history' })
 

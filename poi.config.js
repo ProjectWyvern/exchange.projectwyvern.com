@@ -2,7 +2,7 @@ module.exports = (options, req) => ({
   entry: './src/index.js',
   html: {
     title: 'Wyvern Exchange',
-    description: 'Decentralized digital item exchange',
+    description: 'Autonomously governed decentralized digital item exchange',
     template: 'src/index.ejs'
   },
   webpack (config) {
