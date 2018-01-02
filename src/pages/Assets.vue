@@ -1,13 +1,13 @@
 <template>
 <div>
-Find Item
+Assets
 </div>
 </template>
 
 <script>
 export default {
   metaInfo: {
-    title: 'Find'
+    title: 'Assets'
   }
 }
 </script>

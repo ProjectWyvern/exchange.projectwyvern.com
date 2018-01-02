@@ -3,10 +3,11 @@
   <v-navigation-drawer fixed clipped app v-model="drawerLeft">
     <v-list dense>
       <template v-for="(l, i) in links">
-        <v-subheader v-if="l.section">{{ l.section }}</v-subheader>
+        <v-subheader v-if="l.banner" class="banner">{{ l.banner }}</v-subheader>
+        <v-subheader v-else-if="l.section">{{ l.section }}</v-subheader>
         <v-divider v-else-if="l.divider" />
         <router-link :to="l.path" v-else-if="!l.divider">
-          <v-list-tile>
+          <v-list-tile :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? 'active': ''">
             <v-list-tile-avatar>
               <v-icon>{{ l.icon }}</v-icon>
             </v-list-tile-avatar>
@@ -47,7 +48,10 @@
     ></v-text-field>
     <div class="d-flex align-center" style="margin-left: auto">
       <v-btn icon>
-        <v-icon>notifications</v-icon>
+        <v-badge color="red">
+          <span slot="badge">6</span>
+          <v-icon>notifications</v-icon>
+        </v-badge>
       </v-btn>
       <v-btn icon @click.stop="drawerRight = !drawerRight">
         <v-icon>network_check</v-icon>
@@ -55,12 +59,13 @@
     </div>
   </v-toolbar>
   <v-content>
-    <router-view>
-      <v-container fluid></v-container>
-    </router-view>
+    <v-container fluid>
+      <router-view>
+      </router-view>
+    </v-container>
   </v-content>
   <v-footer app class="footer hidden-xs-only">
-  © 2017 Project Wyvern Developers. This application is completely open-source and you can run it yourself if you like; see the <a style="margin-left: 0px; margin-right: 4px;" href="https://github.com/projectwyvern/exchange.projectwyvern.com">Github repository</a> for instructions.
+  Prerelease Alpha - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers. This application is completely open-source and you can run it yourself if you like; see the <a style="margin-left: 0px; margin-right: 4px;" href="https://github.com/projectwyvern/exchange.projectwyvern.com">Github repository</a> for instructions.
   </v-footer>
 </v-app>
 </template>
@@ -72,11 +77,23 @@ export default {
     title: '',
     titleTemplate: 'Wyvern Exchange • %s'
   },
+  computed: {
+    activePath: function() {
+      return this.$route.path
+    },
+    hash: function() {
+      return COMMITHASH;
+    },
+    branch: function() {
+      return BRANCH;
+    }
+  },
   data: function() {
     return {
       drawerLeft: true,
       drawerRight: false,
       links: [
+        { banner: 'Prerelease Alpha' },
         { name: 'Home', icon: 'home', path: '/' },
         { divider: true },
         { section: 'Items' },
@@ -85,6 +102,7 @@ export default {
         { name: 'Post', icon: 'create', path: '/items/post' },
         { divider: true },
         { section: 'Account' },
+        { name: 'Assets', icon: 'domain', path: '/account/assets' },
         { name: 'Profile', icon: 'person', path: '/account/profile' },
         { name: 'History', icon: 'history', path: '/account/history' },
         { name: 'Escrow', icon: 'account_balance', path: '/account/escrow' },
@@ -116,6 +134,10 @@ a {
 
 .input-group {
   min-height: 40px !important;
+}
+
+.active {
+  border-left: 10px solid #000;
 }
 
 .input-group.input-group--solo .input-group__input {
@@ -151,5 +173,13 @@ a {
 
 .footer > a:hover {
   text-decoration: underline;
+}
+
+.banner {
+  display: block;
+  font-variant: small-caps;
+  padding-top: 3px;
+  height: 30px;
+  text-align: center;
 }
 </style>

@@ -1,12 +1,13 @@
 <template>
 <div>
+Post Item
 </div>
 </template>
 
 <script>
 export default {
   metaInfo: {
-    title: 'New Item'
+    title: 'Post Item'
   }
 }
 </script>

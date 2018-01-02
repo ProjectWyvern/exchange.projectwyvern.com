@@ -1,8 +1,10 @@
 {
   "dependencies": {
     "bunyan": "^1.8.12",
+    "git-rev": "^0.2.1",
+    "git-revision-webpack-plugin": "^2.5.1",
     "poi": "^9.6.1",
-    "vue-analytics": "^5.7.1",
+    "vue-analytics": "^5.8.0",
     "vue-lazyload": "^1.1.4",
     "vue-meta": "^1.4.0",
     "vue-router": "^3.0.1",
