@@ -1,6 +1,8 @@
 <template>
 <div>
 Assets
+
+Display "backpack" and account assets, enable users to move assets.
 </div>
 </template>
 

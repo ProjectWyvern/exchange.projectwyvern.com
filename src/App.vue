@@ -21,7 +21,7 @@
       </template>
     </v-list>
   </v-navigation-drawer>
-  <v-navigation-drawer fixed clipped app right v-model="drawerRight">
+  <v-navigation-drawer fixed clipped app right v-model="drawerNetwork">
     <v-list dense>
       <v-list-tile>
         <v-list-tile-action>
@@ -35,7 +35,7 @@
   </v-navigation-drawer>
   <v-toolbar app dark clipped-left fixed class="toolbar">
     <v-toolbar-title :style="$vuetify.breakpoint.smAndUp ? 'width: 300px; min-width: 250px' : 'min-width: 72px'">
-      <img src="/img/logo-square-red-transparent-200x200.png" class="logo" />
+      <router-link to="/"><img src="/img/logo-square-red-transparent-200x200.png" class="logo" /></router-link>
       <v-toolbar-side-icon class="title-drawer" @click.stop="drawerLeft = !drawerLeft"></v-toolbar-side-icon>
       <span class="title hidden-xs-only">Wyvern Exchange</span>
     </v-toolbar-title>
@@ -53,7 +53,7 @@
           <v-icon>notifications</v-icon>
         </v-badge>
       </v-btn>
-      <v-btn icon @click.stop="drawerRight = !drawerRight">
+      <v-btn icon @click.stop="drawerNetwork = !drawerNetwork">
         <v-icon>network_check</v-icon>
       </v-btn>
     </div>
@@ -71,6 +71,9 @@
 </template>
 
 <script>
+import MobileDetect from 'mobile-detect'
+const mobile = new MobileDetect(window.navigator.userAgent).mobile()
+
 export default {
   name: 'app',
   metaInfo: {
@@ -88,24 +91,35 @@ export default {
       return BRANCH;
     }
   },
+  watch: {
+    $route(to, from) {
+      /* This is a silly hack, unclear why necessary. FIXME. */
+      const drawerLeft = this.drawerLeft
+      const drawerNetwork = this.drawerNetwork
+      if (!mobile) {
+        setTimeout(() => {
+          this.drawerLeft = drawerLeft
+          this.drawerNetwork = drawerNetwork
+        }, 50);
+      }
+    },
+  },
   data: function() {
     return {
       drawerLeft: true,
-      drawerRight: false,
+      drawerNetwork: false,
       links: [
         { banner: 'Prerelease Alpha' },
         { name: 'Home', icon: 'home', path: '/' },
         { divider: true },
-        { section: 'Items' },
-        { name: 'Find', icon: 'search', path: '/items/find' },
-        { name: 'Browse', icon: 'grid_on', path: '/items/browse' },
-        { name: 'Post', icon: 'create', path: '/items/post' },
+        { section: 'Orders' },
+        { name: 'Find', icon: 'search', path: '/orders/find' },
+        { name: 'Post', icon: 'create', path: '/orders/post' },
         { divider: true },
         { section: 'Account' },
         { name: 'Assets', icon: 'domain', path: '/account/assets' },
         { name: 'Profile', icon: 'person', path: '/account/profile' },
         { name: 'History', icon: 'history', path: '/account/history' },
-        { name: 'Escrow', icon: 'account_balance', path: '/account/escrow' },
         { divider: true },
         { section: 'Exchange' },
         { name: 'Stats', icon: 'graphic_eq', path: '/stats' },

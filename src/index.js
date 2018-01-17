@@ -8,7 +8,11 @@ import App from './App.vue'
 import routes from './routes.js'
 import store from './store.js'
 
+import { WyvernExchange } from 'wyvern-js'
+
 import '../node_modules/vuetify/dist/vuetify.min.css'
+
+console.log(WyvernExchange)
 
 Vue.use(VueRouter)
 Vue.use(VueMeta)

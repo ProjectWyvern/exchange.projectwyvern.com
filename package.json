@@ -3,6 +3,7 @@
     "bunyan": "^1.8.12",
     "git-rev": "^0.2.1",
     "git-revision-webpack-plugin": "^2.5.1",
+    "mobile-detect": "^1.4.1",
     "poi": "^9.6.1",
     "vue-analytics": "^5.8.0",
     "vue-lazyload": "^1.1.4",
@@ -10,7 +11,8 @@
     "vue-router": "^3.0.1",
     "vuetify": "^0.17.5",
     "vuex": "^3.0.1",
-    "vuex-persist": "^1.0.3"
+    "vuex-persist": "^1.0.3",
+    "wyvern-js": "file:../wyvern-js"
   },
   "scripts": {
     "build": "scripts/build.sh"

@@ -1,3 +1,6 @@
 [submodule "docs"]
 	path = docs
 	url = https://github.com/ProjectWyvern/exchange.projectwyvern.com.git
+[submodule "src/wyvern-schemas"]
+	path = src/wyvern-schemas
+	url = https://github.com/ProjectWyvern/wyvern-schemas.git

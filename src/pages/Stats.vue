@@ -1,7 +1,7 @@
 <template>
-<div>
-Stats
-</div>
+<p>
+Exchange volume, user, order, and asset statistics - coming soon!
+</p>
 </template>
 
 <script>
