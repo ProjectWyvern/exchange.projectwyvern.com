@@ -1,9 +1,11 @@
 <template>
-<div>
-History
-
-Display account's Exchange usage history - past purchases, deposits, withdrawals.
-</div>
+<v-container>
+<v-layout>
+<v-flex xs12>
+Display account's Exchange usage history - past purchases, deposits, withdrawals - using event indexes.
+</v-flex>
+</v-layout>
+</v-container>
 </template>
 
 <script>

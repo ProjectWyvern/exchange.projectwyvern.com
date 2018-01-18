@@ -14,7 +14,7 @@ export default [
   { path: '/', component: Home },
   { path: '/orders/find', component: FindOrder },
   { path: '/orders/post', component: PostOrder },
-  { path: '/orders/:id', component: Order },
+  { path: '/orders/:hash', component: Order },
   { path: '/account/assets', component: Assets },
   { path: '/account/profile', component: Profile },
   { path: '/account/history', component: History },

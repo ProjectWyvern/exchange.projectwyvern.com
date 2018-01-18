@@ -1,14 +1,14 @@
 <template>
-<div>
+<v-container>
 <p>
 The Wyvern Exchange is a decentralized digital item exchange running on the Ethereum blockchain.
 </p>
 <p>
-This web application provides an interface to the Wyvern smart contracts, enabling users to buy and sell digital assets through the Wyvern protocol.
+This web application provides an interface to the Wyvern smart contracts, enabling users to buy and sell digital assets through the Wyvern Protocol.
 <p>
 </p>
 <p>
-The Wyvern protocol is governed by the <a href="https://dao.projectwyvern.com" target="_blank">Wyvern DAO</a>, a decentralized autonomous organization. Anyone who holds WYV tokens is a shareholder in the Wyvern DAO and may directly vote on governance decisions or delegate their votes to a trusted party who will do so in their stead.
+The Wyvern Protocol is governed by the <a href="https://dao.projectwyvern.com" target="_blank">Wyvern DAO</a>, a decentralized autonomous organization. Anyone who holds WYV tokens is a shareholder in the Wyvern DAO and may directly vote on governance decisions or delegate their votes to a trusted party who will do so in their stead.
 </p>
 <p>
 All application code is open-source. To request a fix or suggest an improvement, please open an issue or submit a pull request using the <a href="https://github.com/ProjectWyvern/exchange.projectwyvern.com">Github repository</a>.
@@ -19,7 +19,7 @@ To learn more about the Wyvern project, visit <a href="https://projectwyvern.com
 <p>
 For realtime development-related support, join our <a href="https://riot.im/app/#/room/#projectwyvern:matrix.org">Matrix chat (via Riot)</a>. For realtime general user support, join our <a href="https://discord.gg/dZZdybs">Discord</a>.
 </p>
-</div>
+</v-container>
 </template>
 
 <script>

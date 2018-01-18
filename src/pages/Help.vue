@@ -1,10 +1,10 @@
 <template>
-<div>
+<v-container>
 <p>
-General FAQ coming soon (as soon as we know which questions are most frequently asked).<br /><br />
+General FAQ coming as soon as we know which questions are most frequently asked!<br /><br />
 For realtime support, join our <a href="https://discord.gg/dZZdybs">Discord</a>.
 </p>
-</div>
+</v-container>
 </template>
 
 <script>

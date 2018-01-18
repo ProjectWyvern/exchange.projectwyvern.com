@@ -1,7 +1,9 @@
 <template>
+<v-container>
 <p>
 Exchange volume, user, order, and asset statistics - coming soon!
 </p>
+</v-container>
 </template>
 
 <script>

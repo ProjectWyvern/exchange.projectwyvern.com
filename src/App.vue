@@ -1,18 +1,18 @@
 <template>
-<v-app id="app">
-  <v-navigation-drawer fixed clipped app v-model="drawerLeft">
+<v-app id="app" :dark="$store.state.settings.nightMode">
+  <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft">
     <v-list dense>
       <template v-for="(l, i) in links">
         <v-subheader v-if="l.banner" class="banner">{{ l.banner }}</v-subheader>
-        <v-subheader v-else-if="l.section">{{ l.section }}</v-subheader>
+        <v-subheader v-else-if="l.section" style="font-variant: small-caps; font-size: 1.0em; text-align: center;"><span>{{ l.section }}</span></v-subheader>
         <v-divider v-else-if="l.divider" />
         <router-link :to="l.path" v-else-if="!l.divider">
-          <v-list-tile :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? 'active': ''">
+          <v-list-tile :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? ($store.state.settings.nightMode? 'active-night' : 'active'): 'inactive'">
             <v-list-tile-avatar>
               <v-icon>{{ l.icon }}</v-icon>
             </v-list-tile-avatar>
             <v-list-tile-content>
-              <v-list-tile-title>
+              <v-list-tile-title style="font-variant: small-caps; font-size: 1.2em;">
               {{ l.name }}
               </v-list-tile-title>
             </v-list-tile-content>
@@ -22,16 +22,13 @@
     </v-list>
   </v-navigation-drawer>
   <v-navigation-drawer fixed clipped app right v-model="drawerNetwork">
-    <v-list dense>
-      <v-list-tile>
-        <v-list-tile-action>
-          <v-icon>exit_to_app</v-icon>
-        </v-list-tile-action>
-        <v-list-tile-content>
-          <v-list-tile-title>Exit</v-list-tile-title>
-        </v-list-tile-content>
-      </v-list-tile>
-    </v-list>
+    <network :close="() => { drawerNetwork = false }"></network>
+  </v-navigation-drawer>
+  <v-navigation-drawer fixed clipped app right v-model="drawerSettings">
+    <settings :close="() => { drawerSettings = false }"></settings>
+  </v-navigation-drawer>
+  <v-navigation-drawer fixed clipped app right v-model="drawerNotifications">
+    <notifications :close="() => { drawerNotifications = false }"></notifications>
   </v-navigation-drawer>
   <v-toolbar app dark clipped-left fixed class="toolbar">
     <v-toolbar-title :style="$vuetify.breakpoint.smAndUp ? 'width: 300px; min-width: 250px' : 'min-width: 72px'">
@@ -39,15 +36,8 @@
       <v-toolbar-side-icon class="title-drawer" @click.stop="drawerLeft = !drawerLeft"></v-toolbar-side-icon>
       <span class="title hidden-xs-only">Wyvern Exchange</span>
     </v-toolbar-title>
-    <v-text-field
-      light
-      solo
-      prepend-icon="search"
-      placeholder="Search"
-      style="max-width: 500px; min-width: 128px;"
-    ></v-text-field>
     <div class="d-flex align-center" style="margin-left: auto">
-      <v-btn icon>
+      <v-btn icon @click.stop="drawerNotifications = !drawerNotifications">
         <v-badge color="red">
           <span slot="badge">6</span>
           <v-icon>notifications</v-icon>
@@ -55,6 +45,9 @@
       </v-btn>
       <v-btn icon @click.stop="drawerNetwork = !drawerNetwork">
         <v-icon>network_check</v-icon>
+      </v-btn>
+      <v-btn icon @click.stop="drawerSettings = !drawerSettings">
+        <v-icon>settings</v-icon>
       </v-btn>
     </div>
   </v-toolbar>
@@ -65,17 +58,24 @@
     </v-container>
   </v-content>
   <v-footer app class="footer hidden-xs-only">
-  Prerelease Alpha - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers. This application is completely open-source and you can run it yourself if you like; see the <a style="margin-left: 0px; margin-right: 4px;" href="https://github.com/projectwyvern/exchange.projectwyvern.com">Github repository</a> for instructions.
+    <span style="margin: 0 auto;">
+      Prerelease Alpha - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers. This application is completely open-source and you can run it yourself if you like; see the <a style="margin-left: 0px; margin-right: 1px;" target="_blank" href="https://github.com/projectwyvern/exchange.projectwyvern.com">Github repository</a> for instructions.
+    </span>
   </v-footer>
 </v-app>
 </template>
 
 <script>
+import Network from './components/Network'
+import Settings from './components/Settings'
+import Notifications from './components/Notifications'
+
 import MobileDetect from 'mobile-detect'
 const mobile = new MobileDetect(window.navigator.userAgent).mobile()
 
 export default {
   name: 'app',
+  components: { Network, Settings, Notifications },
   metaInfo: {
     title: '',
     titleTemplate: 'Wyvern Exchange • %s'
@@ -96,10 +96,14 @@ export default {
       /* This is a silly hack, unclear why necessary. FIXME. */
       const drawerLeft = this.drawerLeft
       const drawerNetwork = this.drawerNetwork
+      const drawerSettings = this.drawerSettings
+      const drawerNotifications = this.drawerNotifications
       if (!mobile) {
         setTimeout(() => {
           this.drawerLeft = drawerLeft
           this.drawerNetwork = drawerNetwork
+          this.drawerSettings = drawerSettings
+          this.drawerNotifications = drawerNotifications
         }, 50);
       }
     },
@@ -108,6 +112,8 @@ export default {
     return {
       drawerLeft: true,
       drawerNetwork: false,
+      drawerSettings: false,
+      drawerNotifications: false,
       links: [
         { banner: 'Prerelease Alpha' },
         { name: 'Home', icon: 'home', path: '/' },
@@ -131,9 +137,15 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 a {
   text-decoration: none;
+}
+</style>
+
+<style scoped>
+a:hover {
+  text-decoration: underline;
 }
 
 .title {
@@ -152,6 +164,14 @@ a {
 
 .active {
   border-left: 10px solid #000;
+}
+
+.active-night {
+  border-left: 10px solid #fff;
+}
+
+.inactive {
+  margin-left: 10px;
 }
 
 .input-group.input-group--solo .input-group__input {
@@ -185,15 +205,15 @@ a {
   margin-left: 1em;
 }
 
-.footer > a:hover {
-  text-decoration: underline;
-}
-
 .banner {
   display: block;
   font-variant: small-caps;
   padding-top: 3px;
   height: 30px;
   text-align: center;
+}
+
+.drawerLeft * a:hover {
+  text-decoration: none !important;
 }
 </style>

@@ -1,13 +1,14 @@
 <template>
-<div>
-Profile
-
-Display user information, ENS resolution, balances.
-
-Options:
-- Display my ENS name on orders
-- Advanced mode
-</div>
+<v-container>
+<v-layout row wrap>
+<v-flex xs12>
+Authenticated with web3 as {account}, resolved through ENS as {ens}.
+</v-flex>
+<v-flex xs12>
+Balances by token (stored on Exchange / approved for use / in account)
+</v-flex>
+</v-layout>
+</v-container>
 </template>
 
 <script>

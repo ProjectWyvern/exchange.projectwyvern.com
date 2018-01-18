@@ -13,7 +13,7 @@
 
 <script>
 export default {
-  name: 'notifications',
+  name: 'network',
   props: ['close']
 }
 </script>

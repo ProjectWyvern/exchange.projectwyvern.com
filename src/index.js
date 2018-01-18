@@ -16,11 +16,7 @@ console.log(WyvernExchange)
 
 Vue.use(VueRouter)
 Vue.use(VueMeta)
-Vue.use(Vuetify, {
-  theme: {
-    primary: '#000'
-  }
-})
+Vue.use(Vuetify)
 
 const router = new VueRouter({ routes: routes, mode: 'history' })
 

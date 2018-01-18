@@ -1,5 +1,5 @@
 <template>
-<div>
+<v-container>
 <v-stepper v-model="step">
   <v-stepper-header>
     <v-stepper-step step="1">Select category</v-stepper-step>
@@ -94,7 +94,7 @@
     </v-stepper-content>
   </v-stepper-items>
 </v-stepper>
-</div>
+</v-container>
 </template>
 
 <script>
