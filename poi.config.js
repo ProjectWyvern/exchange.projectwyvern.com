@@ -6,7 +6,7 @@ module.exports = (options, req) => ({
   entry: './src/index.js',
   html: {
     title: 'Wyvern Exchange',
-    description: 'Autonomously governed decentralized digital item exchange',
+    description: 'Decentralized digital asset exchange running on the Wyvern Protocol. Buy, sell, or auction any asset representable on the Ethereum blockchain, from virtual kittens to ERC721 tokens to smart contracts.',
     template: 'src/index.ejs'
   },
   webpack (config) {

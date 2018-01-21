@@ -1,8 +1,13 @@
 {
   "dependencies": {
+    "axios": "^0.17.1",
+    "bignumber.js": "^5.0.0",
+    "bluebird": "^3.5.1",
+    "buffer": "^5.0.8",
     "bunyan": "^1.8.12",
     "git-rev": "^0.2.1",
     "git-revision-webpack-plugin": "^2.5.1",
+    "lodash": "^4.17.4",
     "mobile-detect": "^1.4.1",
     "poi": "^9.6.1",
     "vue-analytics": "^5.8.0",

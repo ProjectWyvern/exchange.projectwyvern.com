@@ -4,7 +4,7 @@ function Stream () {}
 Stream.prototype.write = function (rec) {
   console.log('%c%s %c%s %c%s %c%s %O',
       'color:green;',
-      rec.time.toISOString(),
+      rec.time.toLocaleTimeString(),
       'color:red;',
       rec.name,
       'color:blue;',

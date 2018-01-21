@@ -1,10 +1,10 @@
 <template>
 <v-app id="app" :dark="$store.state.settings.nightMode">
-  <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft">
+  <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft" width="180">
     <v-list dense>
       <template v-for="(l, i) in links">
         <v-subheader v-if="l.banner" class="banner">{{ l.banner }}</v-subheader>
-        <v-subheader v-else-if="l.section" style="font-variant: small-caps; font-size: 1.0em; text-align: center;"><span>{{ l.section }}</span></v-subheader>
+        <v-subheader v-else-if="l.section" style="font-variant: small-caps; font-size: 1.0em; text-align: center;"><span style="margin: 0 auto;">{{ l.section }}</span></v-subheader>
         <v-divider v-else-if="l.divider" />
         <router-link :to="l.path" v-else-if="!l.divider">
           <v-list-tile :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? ($store.state.settings.nightMode? 'active-night' : 'active'): 'inactive'">
@@ -59,7 +59,7 @@
   </v-content>
   <v-footer app class="footer hidden-xs-only">
     <span style="margin: 0 auto;">
-      Prerelease Alpha - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers. This application is completely open-source and you can run it yourself if you like; see the <a style="margin-left: 0px; margin-right: 1px;" target="_blank" href="https://github.com/projectwyvern/exchange.projectwyvern.com">Github repository</a> for instructions.
+      Prerelease Alpha - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers.
     </span>
   </v-footer>
 </v-app>

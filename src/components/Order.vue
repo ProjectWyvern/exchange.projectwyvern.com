@@ -1,16 +1,15 @@
 <template>
-<v-card :hover="hover" raised style="height: 350px; width: 350px;">
-  <v-card-media :src="metadata.image" height="200px">
-  </v-card-media>
-  <v-card-title primary-title>
-    <div style="width: 100%;">
-      <div style="width: 100%;">
-        <h3 style="display: inline-block;">{{ metadata.title }}</h3>
-        <span class="elevation-5 price">On Sale for {{ price }} {{ token.symbol }}</span>
-      </div>
-      <div>{{ metadata.description }}</div><br />
+<v-card :hover="hover" raised style="height: 300px; width: 350px;">
+  <div style="height: 15px;"></div>
+  <component v-bind:is="asset" class="elevation-0" :metadata="metadata" style="margin-left: 50px"></component>
+  <div class="saleInfoOuter">
+    <div class="saleInfo">
+    <div class="side">{{ side }}</div>
+    <div class="expiry">{{ expiry }}</div>
+    <div class="kind">{{ kind }}</div>
+    <div class="price">{{ price }} {{ token.symbol }}</div>
     </div>
-  </v-card-title>
+  </div>
   <v-card-actions v-if="signature">
     <v-btn flat>Details</v-btn>
     <v-btn flat>Match</v-btn>
@@ -19,29 +18,65 @@
 </template>
 
 <script>
+import BigNumber from 'bignumber.js'
 import _tokens from '../wyvern-schemas/build/tokens.json'
+
+import { WyvernProtocol } from '../aux'
+import Asset from './Asset'
 
 export default {
   name: 'order',
-  props: ['order', 'metadata', 'signature', 'hover'],
+  components: { Asset },
+  props: ['order', 'asset', 'metadata', 'signature', 'hover'],
   computed: {
     token: function() {
-      return _tokens.filter(t => t.address === this.order.paymentToken)[0]
+      return _tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
+    },
+    expiry: function() {
+      return 'No Expiration'
+    },
+    side: function() {
+      return 'For Sale'
     },
     price: function() {
-      return this.order.basePrice
+      return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
+    },
+    kind: function() {
+      return 'Fixed Price'
     }
   }
 }
 </script>
 
 <style scoped>
+.saleInfoOuter {
+  width: 100%;
+}
+
+.saleInfo {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  line-height: 1.5em;
+  margin: 0 auto;
+}
+
+.side, .kind, .expiry, .price {
+  display: inline-block;
+  padding-left: 0.4em;
+}
+
 .price {
-  position: relative;
-  bottom: 0.4em;
   float: right;
+  padding-right: 0.4em;
   background: #000;
   color: #fff;
-  padding: 0.3em;
+  font-weight: bold;
+}
+
+.hash {
+  text-align: center;
+  line-height: 1.5em;
+  padding-bottom: 0.2em;
+  font-size: 1.0em;
 }
 </style>

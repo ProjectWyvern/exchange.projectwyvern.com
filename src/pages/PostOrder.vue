@@ -1,6 +1,7 @@
 <template>
 <v-container>
-<v-stepper v-model="step">
+<v-progress-linear v-if="!ready" v-bind:indeterminate="true"></v-progress-linear>
+<v-stepper v-if="ready" v-model="step">
   <v-stepper-header>
     <v-stepper-step step="1">Select category</v-stepper-step>
     <v-divider></v-divider>
@@ -87,7 +88,7 @@
       <div class="explainer">
       Ensure this is the exact order you wish to place.
       </div><br />
-      <order :order="order" :metadata="metadata"></order>
+      <order v-if="schema && step == 5" :order="order" :metadata="order.metadata" :asset="schema.config.name"></order>
       <br />
       <v-btn color="primary" @click.native="post">Post Order</v-btn>
       <v-btn @click.native="step = 4" flat>Back</v-btn>
@@ -98,7 +99,13 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import BigNumber from 'bignumber.js'
+
 import Order from '../components/Order'
+import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
+
+import { encodeDefaultCall, encodeReplacementPattern } from '../wyvern-schemas/build/schemaFunctions.js'
 import _schemas from '../wyvern-schemas/build/schemas.json'
 import _tokens from '../wyvern-schemas/build/tokens.json'
 
@@ -118,27 +125,32 @@ export default {
       side: query.side ? query.side : null,
       category: query.category ? query.category : null,
       values: {},
-      saleKind: null,
+      saleKind: 0,
       saleKinds: [
         {text: 'Fixed Price', value: 0},
         {text: 'English Auction', value: 1},
         {text: 'Dutch Auction', value: 2} 
       ],
-      token: null,
+      token: _tokens[0].address,
       tokens: _tokens,
       amount: null,
       expiration: 0
     }
   },
   computed: {
+    ready: function() {
+      return this.$store.state.web3.base ? true : false
+    },
     schemas: function() {
-      return _schemas.map((s, index) => {
+      return _schemas.filter(s => {
+        return this.$store.state.web3.base && this.$store.state.web3.base.network === s.config.network
+      }).map((s, index) => {
         s.index = index
         return s
-      }).filter(s => this.catfilter === '' || s.config.name.toLowerCase().indexOf(this.catfilter.toLowerCase()) !== -1);
+      }).filter(s => this.catfilter === '' || s.config.name.toLowerCase().indexOf(this.catfilter.toLowerCase()) !== -1)
     },
     schema: function() {
-      return _schemas[this.category]
+      return _schemas.filter(s => this.$store.state.web3.base && this.$store.state.web3.base.network === s.config.network)[this.category]
     },
     fields: function() {
       return this.schema ?
@@ -146,31 +158,44 @@ export default {
         : []
     },
     order: function() {
+      const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
+      const token = _tokens.filter(t => t.address === this.token)[0]
+      const tokenDecimals = token ? token.decimals : 18
+      var calldata = '0x'
+      if (this.schema && Object.keys(this.values).length === this.fields.length) {
+        calldata = encodeDefaultCall(this.schema.config.abis.transfer, this.fields.map((f, i) => this.values[i]))
+      }
       return {
-        exchange: '',
-        initiator: '',
-        side: this.side === 'buy' ? 0 : 1,
+        exchange: account,
+        maker: account,
+        taker: WyvernProtocol.NULL_ADDRESS,
+        makerFee: new BigNumber(0),
+        takerFee: new BigNumber(0),
+        feeRecipient: account,
+        side: (this.side === 'buy' ? 0 : 1),
         saleKind: this.saleKind,
-        target: '',
+        target: this.schema ? this.schema.config.abis.transfer.target : null,
         howToCall: 0,
-        calldata: '0x',
-        replacementPattern: '0x',
-        metadataHash: '',
+        calldata: calldata,
+        replacementPattern: this.schema ? encodeReplacementPattern(this.schema.config.abis.transfer) : null,
+        metadataHash: '0x',
         paymentToken: this.token,
-        basePrice: this.amount,
-        baseFee: 0,
+        basePrice: this.amount ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), tokenDecimals) : null,
         extra: 0,
-        listingTime: 0,
-        expirationTime: this.expiration,
-        frontend: '',
-        salt: 0
+        listingTime: new BigNumber(Math.round(Date.now() / 1000)),
+        expirationTime: new BigNumber(this.expiration),
+        salt: WyvernProtocol.generatePseudoRandomSalt(),
+        metadata: this.metadata
       }
     },
     metadata: function() {
+      var fields = {}
+      this.fields.map((f, i) => {
+        fields[f.name] = this.values[i]
+      })
       return {
-        title: 'Some Item Title',
-        description: 'Some Item Description',
-        image: 'https://www.cryptokitties.co/images/kitty-eth.svg'
+        fields: fields,
+        schema: this.schema.config.name
       }
     }
   },
@@ -187,8 +212,13 @@ export default {
     }
   },
   methods: {
-    post: function() {
-      console.log('post order', this.schema, this.side, this.values, this.saleKind, this.token, this.amount, this.expiration)
+    post: async function() {
+      const order = orderToJSON(this.order)
+      const signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
+      const callback = () => {
+        this.$router.push('/orders/' + order.hash)
+      }
+      this.$store.dispatch('postOrder', { order: order, callback: callback })
     }
   }
 }

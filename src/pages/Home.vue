@@ -14,7 +14,7 @@ The Wyvern Exchange is a decentralized digital asset exchange running on the Eth
 <p>
 <div class="heading">Why use the Wyvern Exchange?</div><br />
 <div class="small-heading">No trust required.</div><br />
-The Wyvern Exchange runs on the <a href="" target="_blank">Wyvern Protocol</a>, a completely open-source platform for exchanging digital assets represented on the Ethereum blockchain.<br />
+The Wyvern Exchange runs on the <a href="https://projectwyvern.com" target="_blank">Wyvern Protocol</a>, a completely open-source platform for exchanging digital assets represented on the Ethereum blockchain.<br />
 Neither we nor anyone you trade with can steal your funds or prevent you from transferring your assets, and if we were to vanish in a quantum anomaly, you could simply run the Exchange yourself.
 </p>
 <p>

@@ -15,18 +15,26 @@
       <v-select style="width: 49%; display: inline-block;" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-text="name" item-value="value" hide-details></v-select>
       <v-select style="width: 49%; display: inline-block;" v-bind:items="sorts" v-model="sort" label="Sort" item-text="name" item-value="id" hide-details></v-select>
     </v-flex>
-    <v-flex xs12 md4 lg3>
+    <v-flex xs12 md4 lg2>
+      <v-btn @click.native="reload()" raised>Reload</v-btn>
     </v-flex>
   </v-layout>
 </v-container>
 <div class="holder" :style="{maxHeight: maxHeight + 'px'}">
   <v-container grid-list-lg style="height: 2000px;">
-    <v-layout row wrap>
+    <v-layout row wrap v-if="orders">
       <v-flex xs12 md6 lg3 v-for="(order, index) in orders" :key="index">
         <router-link :to="'/orders/' + order.hash">
-          <order hover :order="order.order" :metadata="order.metadata"></order>
+          <order hover :order="order" :metadata="order.metadata" :asset="order.metadata.schema"></order>
         </router-link>
       </v-flex>
+    </v-layout>
+    <v-layout row wrap v-if="!orders">
+      <v-flex xs1></v-flex>
+      <v-flex xs10>
+        <v-progress-linear v-bind:indeterminate="true"></v-progress-linear>
+      </v-flex>
+      <v-flex xs1></v-flex>
     </v-layout>
   </v-container>
 </div>
@@ -43,15 +51,19 @@ var tokens = _tokens.map(t => ({
 }))
 tokens.unshift({symbol: 'Any', address: -1})
 
-var orders = []
-var order = {order: {paymentToken: '', basePrice: 1}, metadata: {title: 'Some Title', description: 'Some Description', image: 'https://www.cryptokitties.co/images/kitty-eth.svg'}}
-for (var i = 0; i < 100; i++) orders.push(order)
-
 export default {
   name: 'find',
   components: { Order },
   metaInfo: {
     title: 'Find Order'
+  },
+  created: function() {
+    this.$store.dispatch('fetchOrders')
+  },
+  methods: {
+    reload: function() {
+      this.$store.dispatch('fetchOrders')
+    }
   },
   data: function() {
     return {
@@ -77,13 +89,15 @@ export default {
         {name: 'Least Recent', id: 1},
         {name: 'Highest Price', id: 2},
         {name: 'Lowest Price', id: 3}
-      ],
-      orders: orders
+      ]
     }
   },
   computed: {
+    orders: function() {
+      return this.$store.state.orders
+    },
     maxHeight: function() {
-      return window.innerHeight - 210;
+      return window.innerHeight - 210
     }
   }
 }
