@@ -2,7 +2,7 @@
 <v-container>
 <v-layout>
 <v-flex xs12>
-Display account's Exchange usage history - past purchases, deposits, withdrawals - using event indexes.
+Account Exchange usage history - sales, purchases, deposits, and withdrawals - coming soon!
 </v-flex>
 </v-layout>
 </v-container>

@@ -18,7 +18,8 @@
     "vuetify": "^0.17.5",
     "vuex": "^3.0.1",
     "vuex-persist": "^1.0.3",
-    "wyvern-js": "file:../wyvern-js"
+    "wyvern-js": "file:../wyvern-js",
+    "wyvern-schemas": "file:../wyvern-schemas"
   },
   "scripts": {
     "build": "scripts/build.sh"

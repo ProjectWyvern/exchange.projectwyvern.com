@@ -1,6 +1,6 @@
 <template>
 <v-card :hover="hover" raised style="height: 250px; width: 250px;">
-  <v-card-media :src="metadata.image" height="150px">
+  <v-card-media :src="metadata.thumbnail" height="150px">
   </v-card-media>
   <v-card-title primary-title>
     <div style="width: 100%;">

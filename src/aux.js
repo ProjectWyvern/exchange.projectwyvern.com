@@ -1,12 +1,10 @@
 import Promise from 'bluebird'
 import BigNumber from 'bignumber.js'
-// import _ from 'lodash'
-// import { Buffer } from 'buffer'
 import Web3 from 'web3'
 
 import { WyvernProtocol } from 'wyvern-js'
+import * as WyvernSchemas from 'wyvern-schemas'
 
-import _schemas from './wyvern-schemas/build/schemas.json'
 import { logger } from './logging.js'
 
 export const orderToJSON = (order) => {
@@ -86,18 +84,92 @@ export var providerInstance
 
 export var protocolInstance
 
+export var web3
+
+var txCallbacks = {}
+
+export const track = (txHash, onConfirm) => {
+  if (txCallbacks[txHash]) {
+    txCallbacks[txHash].push(onConfirm)
+  } else {
+    txCallbacks[txHash] = [onConfirm]
+    const poll = async () => {
+      if (!web3) {
+        setTimeout(poll, 1000)
+        return
+      }
+      const tx = await promisify(c => web3.eth.getTransaction(txHash, c))
+      if (tx.blockHash && tx.blockHash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        const receipt = await promisify(c => web3.eth.getTransactionReceipt(txHash, c))
+        const status = parseInt(receipt.status) === 1
+        txCallbacks[txHash].map(f => f(status))
+        delete txCallbacks[txHash]
+      } else {
+        setTimeout(poll, 1000)
+      }
+    }
+    poll()
+  }
+}
+
+const wrapAction = (func) => {
+  return async (fst, snd) => {
+    try {
+      await func(fst, snd)
+    } catch (err) {
+      const { onError } = snd
+      onError(err)
+    }
+  }
+}
+
+const wrapSend = (contract, method) => {
+  return async ({ state, commit }, { params, onError, onTxHash, onConfirm }) => {
+    const accounts = await promisify(web3.eth.getAccounts)
+    const account = accounts[0]
+    params.push({from: account})
+    const txHash = await protocolInstance[contract][method].sendTransactionAsync(...params)
+    commit('commitTx', { txHash: txHash, params: params })
+    onTxHash(txHash)
+    track(txHash, (success) => {
+      commit('mineTx', { txHash: txHash, success: success })
+      onConfirm(success)
+    })
+  }
+}
+
 export const web3Actions = {
+  registerProxy: wrapAction(wrapSend('wyvernProxyRegistry', 'registerProxy')),
+  rawSend: wrapAction(async ({ state, commit }, { abi, params, onError, onTxHash, onConfirm }) => {
+    const accounts = await promisify(web3.eth.getAccounts)
+    const account = accounts[0]
+    const encoded = WyvernSchemas.encodeCall(abi, params)
+    var obj = {to: abi.target, from: account, data: encoded}
+    const estGas = await promisify(c => web3.eth.estimateGas(obj, c))
+    obj.gas = estGas
+    const txHash = await promisify(c => web3.eth.sendTransaction(obj, c))
+    commit('commitTx', { txHash: txHash, params: params })
+    onTxHash(txHash)
+    track(txHash, (success) => {
+      commit('mineTx', { txHash, success })
+      onConfirm(success)
+    })
+  })
 }
 
 export var poll
 
 export const bind = (store) => {
   var blockNumber
+  var prevNetwork
+  var account
+  var schemas
+  var tokens
 
   poll = async () => {
     providerInstance = toProviderInstance(store.state.settings.web3Provider)
-    const web3 = new Web3(providerInstance)
-    protocolInstance = new WyvernProtocol(providerInstance, {gasPrice: store.state.settings.gasPrice})
+    web3 = new Web3(providerInstance)
+
     const start = Date.now() / 1000
     const newBlockNumber = await promisify(web3.eth.getBlockNumber)
     const inter = Date.now() / 1000
@@ -105,7 +177,6 @@ export const bind = (store) => {
     store.commit('setWeb3Latency', latency)
     if (newBlockNumber === blockNumber) return
     blockNumber = newBlockNumber
-    const accounts = await promisify(web3.eth.getAccounts)
     const networkId = await promisify(web3.version.getNetwork)
     var network
     switch (networkId) {
@@ -116,24 +187,57 @@ export const bind = (store) => {
       case '42': network = 'kovan'; break
       default: network = 'unknown'
     }
-    const account = accounts[0] ? accounts[0] : null
+
+    if (network !== prevNetwork) {
+      const accounts = await promisify(web3.eth.getAccounts)
+      account = accounts[0] ? accounts[0] : null
+      protocolInstance = new WyvernProtocol(providerInstance, {
+        gasPrice: store.state.settings.gasPrice,
+        wyvernExchangeContractAddress: WyvernProtocol.DEPLOYED[network].WyvernExchange,
+        wyvernProxyRegistryContractAddress: WyvernProtocol.DEPLOYED[network].WyvernProxyRegistry
+      })
+      schemas = WyvernSchemas.schemas[network]
+      store.commit('setWeb3Schemas', schemas)
+      tokens = WyvernSchemas.tokens[network]
+      store.commit('setWeb3Tokens', tokens)
+    }
+
+    prevNetwork = network
+
     const balance = account ? await promisify(c => web3.eth.getBalance(account, c)) : 0
     const base = { account: account, blockNumber: blockNumber, network: network, balance: new BigNumber(balance) }
     store.commit('setWeb3Base', base)
 
+    const proxy = await protocolInstance.wyvernProxyRegistry.proxies.callAsync(account)
+    store.commit('setWeb3Proxy', proxy === WyvernProtocol.NULL_ADDRESS ? null : proxy)
+
     {
-      const traced = await Promise.all(_schemas.filter(s => s.config.network === network).map(async s => {
-        const transferEvent = s.config.events.transfer
-        if (!transferEvent.index) return []
-        const contract = web3.eth.contract([s.config.events.transfer]).at(transferEvent.target)
-        const destination = transferEvent.inputs.filter(i => i.destination)[0]
-        var filter = {}
-        filter[destination.name] = account
-        const events = await promisify(c => contract[transferEvent.name](filter, {fromBlock: 0}).get(c))
-        const assets = events.map(e => new BigNumber(e.args._tokenId))
-        return assets.map(a => ({schema: s.config.name, asset: a}))
+      const assetsBySchema = await Promise.all(schemas.map(async s => {
+        const transferEvent = s.events.transfer
+        const contract = web3.eth.contract([transferEvent]).at(transferEvent.target)
+        const destination = transferEvent.inputs.filter(i => i.kind === 'destination')[0]
+        const source = transferEvent.inputs.filter(i => i.kind === 'source')[0]
+        var receiveFilter = {}
+        receiveFilter[destination.name] = [account]
+        if (proxy !== null) receiveFilter[destination.name].push(proxy)
+        const receiveEvents = await promisify(c => contract[transferEvent.name](receiveFilter, {fromBlock: 0}).get(c))
+        var sendFilter = {}
+        sendFilter[source.name] = [account]
+        if (proxy !== null) sendFilter[source.name].push(proxy)
+        const sendEvents = await promisify(c => contract[transferEvent.name](sendFilter, {fromBlock: 0}).get(c))
+        const assets = receiveEvents.filter(rE => {
+          const asset = transferEvent.nftFromInputs(rE.args)
+          return sendEvents.filter(sE => transferEvent.nftFromInputs(sE.args).toString() === asset.toString() &&
+            (sE.args[source.name] === rE.args[destination.name]) &&
+            (sE.blockNumber > rE.blockNumber || (sE.blockNumber === rE.blockNumber && sE.transactionIndex > rE.transactionIndex))).length === 0
+        }).map(rE => ({
+          schema: s,
+          asset: transferEvent.nftFromInputs(rE.args),
+          proxy: rE.args[destination.name] === proxy
+        }))
+        return assets
       }))
-      const assets = [].concat.apply(...traced)
+      const assets = [].concat.apply(...assetsBySchema)
       store.commit('setWeb3Assets', assets)
     }
 

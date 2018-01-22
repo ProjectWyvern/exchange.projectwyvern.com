@@ -10,15 +10,9 @@ import store from './store.js'
 
 import '../node_modules/vuetify/dist/vuetify.min.css'
 
-import _schemas from './wyvern-schemas/build/schemas.json'
-
 Vue.use(VueRouter)
 Vue.use(VueMeta)
 Vue.use(Vuetify)
-
-_schemas.map(schema => {
-  Vue.component(schema.config.name, require('./wyvern-schemas/build/templates/' + schema.config.name + '.vue').default)
-})
 
 const router = new VueRouter({ routes: routes, mode: 'history' })
 

@@ -1,7 +1,7 @@
 <template>
 <v-card :hover="hover" raised style="height: 300px; width: 350px;">
   <div style="height: 15px;"></div>
-  <component v-bind:is="asset" class="elevation-0" :metadata="metadata" style="margin-left: 50px"></component>
+  <asset class="elevation-0" :metadata="metadata" style="margin-left: 50px"></asset>
   <div class="saleInfoOuter">
     <div class="saleInfo">
     <div class="side">{{ side }}</div>
@@ -19,7 +19,6 @@
 
 <script>
 import BigNumber from 'bignumber.js'
-import _tokens from '../wyvern-schemas/build/tokens.json'
 
 import { WyvernProtocol } from '../aux'
 import Asset from './Asset'
@@ -30,7 +29,12 @@ export default {
   props: ['order', 'asset', 'metadata', 'signature', 'hover'],
   computed: {
     token: function() {
-      return _tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
+      return this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
+    },
+    tokens: function() {
+      return this.$store.state.web3.tokens ?
+        [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
+        : []
     },
     expiry: function() {
       return 'No Expiration'

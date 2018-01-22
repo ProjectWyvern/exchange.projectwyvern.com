@@ -39,7 +39,7 @@
     <div class="d-flex align-center" style="margin-left: auto">
       <v-btn icon @click.stop="drawerNotifications = !drawerNotifications">
         <v-badge color="red">
-          <span slot="badge">6</span>
+          <span v-if="notificationCount > 0" slot="badge">{{ notificationCount }}</span>
           <v-icon>notifications</v-icon>
         </v-badge>
       </v-btn>
@@ -89,6 +89,9 @@ export default {
     },
     branch: function() {
       return BRANCH;
+    },
+    notificationCount: function() {
+      return this.$store.state.notifications.length
     }
   },
   watch: {

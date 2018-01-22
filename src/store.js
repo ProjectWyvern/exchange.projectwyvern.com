@@ -13,7 +13,7 @@ Vue.use(Vuex)
 
 const vuexLocal = new VuexPersistence({
   storage: window.localStorage,
-  reducer: state => ({settings: state.settings})
+  reducer: state => ({settings: state.settings, notifications: state.notifications})
 })
 
 var provider = 'injected'
@@ -56,16 +56,28 @@ Developer? Interested? Email team@projectwyvern.com
 logger.debug({extra: {provider: provider}}, 'Chose web3 provider')
 
 const state = {
+  notifications: [],
   settings: {
+    version: '0.2.0',
     gasPrice: null,
     nightMode: false,
     advancedMode: false,
     web3Provider: provider,
-    orderbookServer: 'https://book-rinkeby.exchange.projectwyvern.com'
+    orderbookServer: 'http://37.187.38.165:8080'
   },
   web3: {},
   orders: null,
   ordersByHash: {}
+}
+
+try {
+  const oldVersion = JSON.parse(window.localStorage.vuex).settings.version
+  if (oldVersion !== state.settings.version) {
+    logger.info({extra: {oldVersion: oldVersion, newVersion: state.settings.version}}, 'Version out of date, clearing localStorage')
+    window.localStorage.clear()
+  }
+} catch (err) {
+  logger.warn({ extra: { err } }, 'Could not parse version from localStorage')
 }
 
 const getters = {}
@@ -107,6 +119,15 @@ const mutations = {
   setWeb3Assets: (state, assets) => {
     Vue.set(state.web3, 'assets', assets)
   },
+  setWeb3Proxy: (state, proxy) => {
+    Vue.set(state.web3, 'proxy', proxy)
+  },
+  setWeb3Schemas: (state, schemas) => {
+    Vue.set(state.web3, 'schemas', schemas)
+  },
+  setWeb3Tokens: (state, tokens) => {
+    Vue.set(state.web3, 'tokens', tokens)
+  },
   setOrderbookServer: (state, server) => {
     Vue.set(state.settings, 'orderbookServer', server)
   },
@@ -115,6 +136,31 @@ const mutations = {
   },
   setOrder: (state, { order, hash }) => {
     Vue.set(state.ordersByHash, hash, order)
+  },
+  commitTx: (state, { txHash, params }) => {
+    logger.info({extra: { txHash, params }}, 'Transaction committed')
+    state.notifications.splice(0, 0, {
+      type: 'commitTx',
+      status: 'warn',
+      finalized: false,
+      txHash: txHash,
+      params: params
+    })
+  },
+  mineTx: (state, { txHash, success }) => {
+    logger.info({extra: { txHash, success }}, 'Transaction mined')
+    const m = state.notifications.map((n, i) => [n, i]).filter(m => m[0].txHash === txHash)[0]
+    const n = m[0]
+    const i = m[1]
+    Vue.set(n, 'status', success ? 'ok' : 'error')
+    Vue.set(n, 'finalized', true)
+    Vue.set(state.notifications, i, n)
+  },
+  clearNotification: (state, index) => {
+    state.notifications.splice(index, 1)
+  },
+  clearNotifications: (state) => {
+    Vue.set(state, 'notifications', [])
   }
 }
 

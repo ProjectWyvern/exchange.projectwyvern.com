@@ -18,15 +18,15 @@
       <div class="header">Select the kind of asset you want to buy or sell.</div>
       <div v-if="schema" style="margin-bottom: 1em;">
         <v-card raised style="padding: 5px; margin: 5px; width: 300px; height: 350px;">
-          <v-card-media height="200px" :src="schema.config.thumbnail"></v-card-media>
+          <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
           <v-card-title>
             <div>
-              <h3>{{ schema.config.name }}</h3>
-              <div>{{ schema.config.description }}</div>
+              <h3>{{ schema.name }}</h3>
+              <div>{{ schema.description }}</div>
             </div>
           </v-card-title>
           <v-card-actions>
-            <v-btn flat target="_blank" :href="schema.config.social.website">Website</v-btn>
+            <v-btn flat target="_blank" :href="schema.website">Website</v-btn>
           </v-card-actions>
         </v-card>
       </div>
@@ -35,11 +35,11 @@
         <v-layout row wrap class="category-inner">
           <v-flex xs12 md6 lg2 v-for="(schema, index) in schemas" :key="index">
             <v-card raised hover style="padding: 5px; margin: 5px; width: 300px; height: 300px;" @click.native="category = schema.index">
-              <v-card-media height="200px" :src="schema.config.thumbnail"></v-card-media>
+              <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
               <v-card-title>
                 <div>
-                  <h3>{{ schema.config.name }}</h3>
-                  <div>{{ schema.config.description }}</div>
+                  <h3>{{ schema.name }}</h3>
+                  <div>{{ schema.description }}</div>
                 </div>
               </v-card-title>
             </v-card>
@@ -88,7 +88,7 @@
       <div class="explainer">
       Ensure this is the exact order you wish to place.
       </div><br />
-      <order v-if="schema && step == 5" :order="order" :metadata="order.metadata" :asset="schema.config.name"></order>
+      <order v-if="schema && step == 5" :order="order" :metadata="schema.formatter(order.metadata.fields._tokenId)"></order>
       <br />
       <v-btn color="primary" @click.native="post">Post Order</v-btn>
       <v-btn @click.native="step = 4" flat>Back</v-btn>
@@ -102,12 +102,10 @@
 import Vue from 'vue'
 import BigNumber from 'bignumber.js'
 
+import { encodeDefaultCall, encodeReplacementPattern } from 'wyvern-schemas'
+
 import Order from '../components/Order'
 import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
-
-import { encodeDefaultCall, encodeReplacementPattern } from '../wyvern-schemas/build/schemaFunctions.js'
-import _schemas from '../wyvern-schemas/build/schemas.json'
-import _tokens from '../wyvern-schemas/build/tokens.json'
 
 const clone = (obj) => JSON.parse(JSON.stringify(obj))
 
@@ -131,8 +129,7 @@ export default {
         {text: 'English Auction', value: 1},
         {text: 'Dutch Auction', value: 2} 
       ],
-      token: _tokens[0].address,
-      tokens: _tokens,
+      token: null,
       amount: null,
       expiration: 0
     }
@@ -141,32 +138,37 @@ export default {
     ready: function() {
       return this.$store.state.web3.base ? true : false
     },
+    tokens: function() {
+      return this.$store.state.web3.tokens ?
+        [].concat.apply(this.$store.state.web3.tokens.canonicalWrappedEther)
+        : []
+    },
     schemas: function() {
-      return _schemas.filter(s => {
-        return this.$store.state.web3.base && this.$store.state.web3.base.network === s.config.network
-      }).map((s, index) => {
+      return (this.$store.state.web3.schemas || []).map((s, index) => {
         s.index = index
         return s
-      }).filter(s => this.catfilter === '' || s.config.name.toLowerCase().indexOf(this.catfilter.toLowerCase()) !== -1)
+      }).filter(s => this.catfilter === '' || s.name.toLowerCase().indexOf(this.catfilter.toLowerCase()) !== -1)
     },
     schema: function() {
-      return _schemas.filter(s => this.$store.state.web3.base && this.$store.state.web3.base.network === s.config.network)[this.category]
+      return this.schemas[this.category]
     },
     fields: function() {
       return this.schema ?
-        this.schema.config.abis.transfer.inputs.filter(i => i.asset)
+        this.schema.functions.transfer.inputs.filter(i => i.kind === 'asset')
         : []
     },
     order: function() {
       const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
-      const token = _tokens.filter(t => t.address === this.token)[0]
+      const token = this.tokens.filter(t => t.address === this.token)[0]
       const tokenDecimals = token ? token.decimals : 18
       var calldata = '0x'
+      try {
       if (this.schema && Object.keys(this.values).length === this.fields.length) {
-        calldata = encodeDefaultCall(this.schema.config.abis.transfer, this.fields.map((f, i) => this.values[i]))
+        // TODO FIXME
+        calldata = encodeDefaultCall(this.schema.functions.transfer, parseInt(this.values[0]))
       }
-      return {
-        exchange: account,
+      const order = {
+        exchange: WyvernProtocol.DEPLOYED.rinkeby.WyvernExchange,
         maker: account,
         taker: WyvernProtocol.NULL_ADDRESS,
         makerFee: new BigNumber(0),
@@ -174,28 +176,30 @@ export default {
         feeRecipient: account,
         side: (this.side === 'buy' ? 0 : 1),
         saleKind: this.saleKind,
-        target: this.schema ? this.schema.config.abis.transfer.target : null,
+        target: this.schema ? this.schema.functions.transfer.target : null,
         howToCall: 0,
         calldata: calldata,
-        replacementPattern: this.schema ? encodeReplacementPattern(this.schema.config.abis.transfer) : null,
+        replacementPattern: this.schema ? encodeReplacementPattern(this.schema.functions.transfer) : null,
         metadataHash: '0x',
         paymentToken: this.token,
-        basePrice: this.amount ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), tokenDecimals) : null,
+        basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), tokenDecimals) : null,
         extra: 0,
         listingTime: new BigNumber(Math.round(Date.now() / 1000)),
         expirationTime: new BigNumber(this.expiration),
         salt: WyvernProtocol.generatePseudoRandomSalt(),
         metadata: this.metadata
       }
+      return order
+      } catch(e) { console.log(e) }
     },
     metadata: function() {
       var fields = {}
       this.fields.map((f, i) => {
-        fields[f.name] = this.values[i]
+        fields[f.name] = parseInt(this.values[i])
       })
       return {
         fields: fields,
-        schema: this.schema.config.name
+        schema: this.schema.name
       }
     }
   },

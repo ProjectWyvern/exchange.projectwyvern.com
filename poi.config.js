@@ -3,6 +3,7 @@ var gitRevisionPlugin = new GitRevisionPlugin()
 var webpack = require('webpack')
 
 module.exports = (options, req) => ({
+  transformModules: ['ethereumjs-util'],
   entry: './src/index.js',
   html: {
     title: 'Wyvern Exchange',

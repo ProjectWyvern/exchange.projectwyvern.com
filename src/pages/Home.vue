@@ -4,7 +4,7 @@
 <v-flex xs12>
 <p>
 <v-alert color="info" icon="priority_high" value="true" outline>
-This is a prerelease alpha version, running on Ethereum's Rinkeby testnet. Expect UI/UX bugs. Please report issues and send feedback <a href="" target="_blank">using this form</a>.
+This is a prerelease alpha version, running on Ethereum's Rinkeby testnet. Expect UI/UX bugs. Please report issues and send feedback <a href="https://goo.gl/forms/WyD2ZuhPW6yMXfrq1" target="_blank">using this form</a>.
 </v-alert>
 </p><br />
 <p>

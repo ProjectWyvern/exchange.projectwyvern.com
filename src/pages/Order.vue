@@ -10,16 +10,21 @@ Order {{ this.$route.params.hash }}
 </div>
 </v-flex>
 <v-flex xs12 v-if="order">
-<component v-bind:is="order.metadata.schema" style="margin: 0 auto;" :metadata="order.metadata"></component>
+<asset style="margin: 0 auto;" :metadata="schema.formatter(order.metadata.fields._tokenId)"></asset>
 </v-flex>
 <v-flex xs12 v-if="order">
 <div style="text-align: center; line-height: 4em;">
-Price and settlement information.
+<div class="saleInfo">
+<div class="side">{{ side }}</div>
+<div class="expiry">{{ expiry }}</div>
+<div class="kind">{{ kind }}</div>
+<div class="price">{{ price }} {{ token.symbol }}</div>
+</div>
 </div>
 </v-flex>
 <v-flex xs12 v-if="order">
 <div style="margin: 0 auto; width: 100px;">
-<v-btn raised>
+<v-btn raised @click.native="match()">
 Match
 </v-btn>
 </div>
@@ -29,7 +34,11 @@ Match
 </template>
 
 <script>
+import BigNumber from 'bignumber.js'
+import { encodeCall } from 'wyvern-schemas'
+
 import Asset from '../components/Asset'
+import { WyvernProtocol } from '../aux'
 
 export default {
   name: 'orderPage',
@@ -40,14 +49,106 @@ export default {
   created: function() {
     this.$store.dispatch('fetchOrder', { hash: this.$route.params.hash })
   },
+  methods: {
+    match: function() {
+      const matchFunction = WyvernProtocol.EXCHANGE_ABI.filter(f => f.name === 'atomicMatch_')[0]
+      const buy = this.orderToMatch
+      const sell = this.order
+      const params = [
+        [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+        [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt].map(x => x.toString()),
+        [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+        buy.calldata,
+        sell.calldata,
+        buy.replacementPattern,
+        sell.replacementPattern,
+        buy.metadataHash,
+        sell.metadataHash,
+        [0, 0],
+        ['0x', '0x', '0x', '0x']
+      ]
+      const encoded = encodeCall(matchFunction, params)
+      console.log('encoded', encoded)
+      console.log('match', this.orderToMatch)
+      this.$store.dispatch('rawSend', { abi: matchFunction, params: params, onError: console.log, onTxHash: console.log, onConfirm: console.log })
+    }
+  },
   computed: {
+    tokens: function() {
+      return this.$store.state.web3.tokens ?
+        [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
+        : []
+    },
+    token: function() {
+      return this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
+    },
+    expiry: function() {
+      return 'No Expiration'
+    },
+    side: function() {
+      return 'For Sale'
+    },
+    price: function() {
+      return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
+    },
+    kind: function() {
+      return 'Fixed Price'
+    },
+    schema: function() {
+      return !this.order ? null : this.$store.state.web3.schemas.filter(s => s.name === this.order.metadata.schema)[0]
+    },
+    orderToMatch: function() {
+      const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
+      const calldata = encodeCall(this.schema.functions.transfer, [account, this.order.metadata.fields._tokenId])
+      return !this.order ? {} : {
+        exchange: this.order.exchange,
+        maker: account,
+        taker: this.order.maker,
+        makerFee: new BigNumber(0),
+        takerFee: new BigNumber(0),
+        feeRecipient: account,
+        side: (this.order.side + 1) % 2,
+        saleKind: 0,
+        target: this.order.target,
+        howToCall: this.order.howToCall,
+        calldata: calldata,
+        replacementPattern: this.order.replacementPattern, // todo fixme
+        metadataHash: '0x',
+        paymentToken: this.order.paymentToken,
+        basePrice: this.order.basePrice,
+        extra: 0,
+        listingTime: new BigNumber(Math.round(Date.now() / 1000)),
+        expirationTime: 0,
+        salt: WyvernProtocol.generatePseudoRandomSalt(),
+        metadata: {} 
+      }
+    },
     order: function() {
       return this.$store.state.ordersByHash[this.$route.params.hash]
     },
-    
   }
 }
 </script>
 
 <style scoped>
+.saleInfo {
+  padding-top: 1.5em;
+  padding-bottom: 1.5em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  line-height: 1.5em;
+  margin: 0 auto;
+}
+
+.side, .kind, .expiry, .price {
+  display: inline-block;
+  padding-left: 0.4em;
+}
+
+.price {
+  padding-right: 0.4em;
+  background: #000;
+  color: #fff;
+  font-weight: bold;
+}
 </style>

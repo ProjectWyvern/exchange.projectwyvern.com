@@ -25,7 +25,7 @@
     <v-layout row wrap v-if="orders">
       <v-flex xs12 md6 lg3 v-for="(order, index) in orders" :key="index">
         <router-link :to="'/orders/' + order.hash">
-          <order hover :order="order" :metadata="order.metadata" :asset="order.metadata.schema"></order>
+          <order hover :order="order" :metadata="order.schema.formatter(order.metadata.fields._tokenId)"></order>
         </router-link>
       </v-flex>
     </v-layout>
@@ -44,13 +44,6 @@
 <script>
 import Order from '../components/Order'
 
-import _tokens from '../wyvern-schemas/build/tokens.json'
-var tokens = _tokens.map(t => ({
-  symbol: t.symbol,
-  address: t.address
-}))
-tokens.unshift({symbol: 'Any', address: -1})
-
 export default {
   name: 'find',
   components: { Order },
@@ -58,7 +51,7 @@ export default {
     title: 'Find Order'
   },
   created: function() {
-    this.$store.dispatch('fetchOrders')
+    if (this.$store.state.orders === null) this.$store.dispatch('fetchOrders')
   },
   methods: {
     reload: function() {
@@ -75,7 +68,6 @@ export default {
         {name: 'Sell', value: 1}
       ],
       token: -1,
-      tokens: tokens,
       saleKind: -1,
       saleKinds: [
         {name: 'Any', value: -1},
@@ -93,8 +85,17 @@ export default {
     }
   },
   computed: {
+    tokens: function() {
+      return this.$store.state.web3.tokens ?
+        [].concat.apply({symbol: 'Any', address: -1}, this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
+        : []
+    },
     orders: function() {
-      return this.$store.state.orders
+      return this.$store.state.orders.map(o => {
+        const schema = this.$store.state.web3.schemas.filter(s => s.name === o.metadata.schema)[0]
+        o.schema = schema
+        return o
+      })
     },
     maxHeight: function() {
       return window.innerHeight - 210

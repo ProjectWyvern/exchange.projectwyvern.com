@@ -6653,6 +6653,9 @@ write-file-atomic@^2.0.0:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
+"wyvern-schemas@file:../wyvern-schemas":
+  version "0.1.0"
+
 xdg-basedir@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/xdg-basedir/-/xdg-basedir-3.0.0.tgz#496b2cc109eca8dbacfe2dc72b603c17c5870ad4"
