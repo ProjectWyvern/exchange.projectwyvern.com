@@ -11,15 +11,17 @@
     </v-list-tile-content>
   </v-list-tile>
   <br /><br />
-  <v-list-tile v-for="(n, index) in notifications" :key="index">
+  <v-list-tile v-for="(n, index) in notifications" :key="index" class="tile">
     <v-card class="notification">
       <v-card-title>
         <span>{{ format(n.type) }}</span>
-        <v-icon v-if="n.finalized" :class="'icon ' + n.status">{{ iconify(n.status) }}</v-icon>
+        <v-icon v-if="n.finalized" style="margin-left: 5px;" :class="'icon ' + n.status">{{ iconify(n.status) }}</v-icon>
+        <v-progress-circular style="margin-left: 10px;" v-bind:indeterminate="true" size="20" v-if="!n.finalized"></v-progress-circular>
       </v-card-title>
       <v-card-actions>
-        <v-btn @click.native="viewTx(n.txHash)">View TX</v-btn>
-        <v-btn @click.native="clear(index)">Clear</v-btn>
+        <v-btn class="nbtn" flat @click.native="viewTx(n.txHash)">View TX</v-btn>
+        <v-btn class="nbtn" flat @click.native="adjustTx(n.txHash)">Adjust TX</v-btn>
+        <v-btn class="nbtn" flat @click.native="clear(index)">Clear</v-btn>
       </v-card-actions>
     </v-card>
   </v-list-tile>
@@ -66,13 +68,26 @@ export default {
 </script>
 
 <style scoped>
+.tile {
+  height: 120px;
+}
+
 .notification {
   width: 100%;
 }
 
+.nbtn {
+  font-size: 1.0em;
+  max-width: 80px;
+  height: 30px;
+  margin: 0;
+}
+
 .clearall {
   margin: 0;
-  font-size: 0.7em;
+  margin-left: 0.4em;
+  height: 25px;
+  font-size: 0.6em;
 }
 
 .icon {

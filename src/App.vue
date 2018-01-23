@@ -21,14 +21,14 @@
       </template>
     </v-list>
   </v-navigation-drawer>
-  <v-navigation-drawer fixed clipped app right v-model="drawerNetwork">
-    <network :close="() => { drawerNetwork = false }"></network>
+  <v-navigation-drawer temporary disable-resize-watcher disable-route-watcher fixed clipped app right v-model="drawerNetwork">
+    <network></network>
   </v-navigation-drawer>
-  <v-navigation-drawer fixed clipped app right v-model="drawerSettings">
-    <settings :close="() => { drawerSettings = false }"></settings>
+  <v-navigation-drawer temporary disable-resize-watcher disable-route-watcher fixed clipped app right v-model="drawerSettings">
+    <settings></settings>
   </v-navigation-drawer>
-  <v-navigation-drawer fixed clipped app right v-model="drawerNotifications">
-    <notifications :close="() => { drawerNotifications = false }"></notifications>
+  <v-navigation-drawer temporary disable-resize-watcher disable-route-watcher fixed clipped app right v-model="drawerNotifications">
+    <notifications></notifications>
   </v-navigation-drawer>
   <v-toolbar app dark clipped-left fixed class="toolbar">
     <v-toolbar-title :style="$vuetify.breakpoint.smAndUp ? 'width: 300px; min-width: 250px' : 'min-width: 72px'">
@@ -38,7 +38,7 @@
     </v-toolbar-title>
     <div class="d-flex align-center" style="margin-left: auto">
       <v-btn icon @click.stop="drawerNotifications = !drawerNotifications">
-        <v-badge color="red">
+        <v-badge :color="notificationsColor">
           <span v-if="notificationCount > 0" slot="badge">{{ notificationCount }}</span>
           <v-icon>notifications</v-icon>
         </v-badge>
@@ -70,9 +70,6 @@ import Network from './components/Network'
 import Settings from './components/Settings'
 import Notifications from './components/Notifications'
 
-import MobileDetect from 'mobile-detect'
-const mobile = new MobileDetect(window.navigator.userAgent).mobile()
-
 export default {
   name: 'app',
   components: { Network, Settings, Notifications },
@@ -90,33 +87,40 @@ export default {
     branch: function() {
       return BRANCH;
     },
+    notificationsColor: function() {
+      return this.$store.state.notifications.filter(n => n.status === 'warn').length > 0 ?
+        'blue' : this.$store.state.notifications.filter(n => n.status === 'error').length > 0 ?
+        'red' : 'green'
+    },
     notificationCount: function() {
       return this.$store.state.notifications.length
-    }
-  },
-  watch: {
-    $route(to, from) {
-      /* This is a silly hack, unclear why necessary. FIXME. */
-      const drawerLeft = this.drawerLeft
-      const drawerNetwork = this.drawerNetwork
-      const drawerSettings = this.drawerSettings
-      const drawerNotifications = this.drawerNotifications
-      if (!mobile) {
-        setTimeout(() => {
-          this.drawerLeft = drawerLeft
-          this.drawerNetwork = drawerNetwork
-          this.drawerSettings = drawerSettings
-          this.drawerNotifications = drawerNotifications
-        }, 50);
+    },
+    drawerNetwork: {
+      get: function()   { return this.drawer === 'network' },
+      set: function(v)  {
+        if (v) this.drawer = 'network'
+        else this.drawer = null 
       }
     },
+    drawerSettings: {
+      get: function()   { return this.drawer === 'settings' },
+      set: function(v)  {
+        if (v) this.drawer = 'settings'
+        else this.drawer = null 
+      }
+    },
+    drawerNotifications: {
+      get: function()   { return this.drawer === 'notifications' },
+      set: function(v)  {
+        if (v) this.drawer = 'notifications'
+        else this.drawer = null 
+      }
+    } 
   },
   data: function() {
     return {
+      drawer: null,
       drawerLeft: true,
-      drawerNetwork: false,
-      drawerSettings: false,
-      drawerNotifications: false,
       links: [
         { banner: 'Prerelease Alpha' },
         { name: 'Home', icon: 'home', path: '/' },

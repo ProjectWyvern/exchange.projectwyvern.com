@@ -88,7 +88,7 @@
       <div class="explainer">
       Ensure this is the exact order you wish to place.
       </div><br />
-      <order v-if="schema && step == 5" :order="order" :metadata="schema.formatter(order.metadata.fields._tokenId)"></order>
+      <order v-if="schema && step == 5" :order="order" :metadata="schema.formatter(order.metadata.fields._tokenId)" :schema="schema.name"></order>
       <br />
       <v-btn color="primary" @click.native="post">Post Order</v-btn>
       <v-btn @click.native="step = 4" flat>Back</v-btn>
@@ -217,12 +217,15 @@ export default {
   },
   methods: {
     post: async function() {
-      const order = orderToJSON(this.order)
+      var order = orderToJSON(this.order)
       const signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
+      order.v = signature.v
+      order.r = signature.r
+      order.s = signature.s
       const callback = () => {
         this.$router.push('/orders/' + order.hash)
       }
-      this.$store.dispatch('postOrder', { order: order, callback: callback })
+      this.$store.dispatch('postOrder', { order: order, callback: callback, onError: console.log })
     }
   }
 }

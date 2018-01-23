@@ -5,6 +5,7 @@ import Web3 from 'web3'
 import { WyvernProtocol } from 'wyvern-js'
 import * as WyvernSchemas from 'wyvern-schemas'
 
+import api from './api'
 import { logger } from './logging.js'
 
 export const orderToJSON = (order) => {
@@ -138,17 +139,114 @@ const wrapSend = (contract, method) => {
   }
 }
 
+const postOrder = async ({ state, commit }, { order, callback }) => {
+  const hash = await protocolInstance.wyvernExchange.hashOrder_.callAsync(
+    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+    [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt].map(x => new BigNumber(x)),
+    parseInt(order.side),
+    parseInt(order.saleKind),
+    parseInt(order.howToCall),
+    order.calldata,
+    order.replacementPattern,
+    order.metadataHash
+  )
+  /*
+  const signature = await protocolInstance.signOrderHashAsync(hash, order.maker)
+  order.v = signature.v
+  order.r = signature.r
+  order.s = signature.s
+  */
+  console.log(hash, order, protocolInstance.wyvernExchange)
+  const valid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
+    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+    [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+    order.side,
+    order.saleKind,
+    order.howToCall,
+    order.calldata,
+    order.replacementPattern,
+    order.metadataHash,
+    order.v || 0,
+    order.r || '0x',
+    order.s || '0x'
+  )
+  if (!valid) throw new Error('Order did not pass validation!')
+  await api.postOrder(state.settings.orderbookServer, order)
+  callback()
+}
+
+const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, onConfirm }) => {
+  console.log('atomicMatch', buy, sell)
+  const accounts = await promisify(web3.eth.getAccounts)
+  const account = accounts[0]
+  console.log('from', account)
+  console.log(protocolInstance.wyvernExchange)
+  const buyValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken],
+    [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
+    buy.side,
+    buy.saleKind,
+    buy.howToCall,
+    buy.calldata,
+    buy.replacementPattern,
+    buy.metadataHash,
+    0, '0x', '0x')
+  console.log('buyValid', buyValid)
+  const sellValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
+    [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+    sell.side,
+    sell.saleKind,
+    sell.howToCall,
+    sell.calldata,
+    sell.replacementPattern,
+    sell.metadataHash,
+    0, '0x', '0x')
+  console.log('sellValid', sellValid)
+  const ordersCanMatch = await protocolInstance.wyvernExchange.ordersCanMatch_.callAsync(
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+    [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+    buy.calldata,
+    sell.calldata,
+    buy.replacementPattern,
+    sell.replacementPattern,
+    buy.metadataHash,
+    sell.metadataHash
+  )
+  console.log('ordersCanMatch', ordersCanMatch)
+  const orderCalldataCanMatch = await protocolInstance.wyvernExchange.orderCalldataCanMatch.callAsync(buy.calldata, buy.replacementPattern, sell.calldata, sell.replacementPattern)
+  console.log('orderCalldataCanMatch', orderCalldataCanMatch)
+  const atomicMatchSimulation = await protocolInstance.wyvernExchange.atomicMatch_.estimateGasAsync(
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+    [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+    '0x',
+    '0x',
+    '0x',
+    '0x',
+    buy.metadataHash,
+    sell.metadataHash,
+    [0, 0],
+    ['0x', '0x', '0x', '0x']
+  )
+  console.log('atomicMatchSimulation', atomicMatchSimulation)
+}
+
 export const web3Actions = {
   registerProxy: wrapAction(wrapSend('wyvernProxyRegistry', 'registerProxy')),
+  atomicMatch: wrapAction(atomicMatch),
+  postOrder: wrapAction(postOrder),
   rawSend: wrapAction(async ({ state, commit }, { abi, params, onError, onTxHash, onConfirm }) => {
     const accounts = await promisify(web3.eth.getAccounts)
     const account = accounts[0]
     const encoded = WyvernSchemas.encodeCall(abi, params)
     var obj = {to: abi.target, from: account, data: encoded}
+    const result = await promisify(c => web3.eth.call(obj, c))
     const estGas = await promisify(c => web3.eth.estimateGas(obj, c))
     obj.gas = estGas
     const txHash = await promisify(c => web3.eth.sendTransaction(obj, c))
-    commit('commitTx', { txHash: txHash, params: params })
+    commit('commitTx', { txHash: txHash, params: params, estGas: estGas, simulationResult: result })
     onTxHash(txHash)
     track(txHash, (success) => {
       commit('mineTx', { txHash, success })
@@ -169,6 +267,7 @@ export const bind = (store) => {
   poll = async () => {
     providerInstance = toProviderInstance(store.state.settings.web3Provider)
     web3 = new Web3(providerInstance)
+    web3.eth.defaultAccount = account
 
     const start = Date.now() / 1000
     const newBlockNumber = await promisify(web3.eth.getBlockNumber)
@@ -191,6 +290,7 @@ export const bind = (store) => {
     if (network !== prevNetwork) {
       const accounts = await promisify(web3.eth.getAccounts)
       account = accounts[0] ? accounts[0] : null
+      web3.eth.defaultAccount = account
       protocolInstance = new WyvernProtocol(providerInstance, {
         gasPrice: store.state.settings.gasPrice,
         wyvernExchangeContractAddress: WyvernProtocol.DEPLOYED[network].WyvernExchange,

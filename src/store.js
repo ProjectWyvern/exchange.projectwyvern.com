@@ -91,10 +91,6 @@ const actions = Object.assign({
   fetchOrder: async ({ state, commit }, { hash }) => {
     const order = await api.order(state.settings.orderbookServer, hash)
     commit('setOrder', { hash, order })
-  },
-  postOrder: async ({ state, commit }, { order, callback }) => {
-    await api.postOrder(state.settings.orderbookServer, order)
-    callback()
   }
 }, web3Actions)
 

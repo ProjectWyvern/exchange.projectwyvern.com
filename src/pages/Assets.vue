@@ -10,13 +10,18 @@
         <v-progress-circular size="40" v-bind:indeterminate="true"></v-progress-circular>
       </div>
       <div v-if="ready && !proxy" style="padding-top: 2em; text-align: center;">
-      <v-btn @click.native="registerProxy">Initialize Account</v-btn>
+      <v-btn @click.stop="registerProxy">Initialize Account</v-btn>
       </div>
+      <div :style="containerStyle">
       <v-layout row wrap>
         <v-flex v-for="(asset, index) in proxyAssets" xs12 md6 lg6 :key="index">
-          <asset style="margin: 0 auto; margin-bottom: 1em;" :metadata="asset.schema.formatter(asset.asset)"></asset>
+          <v-tooltip bottom>
+            <asset @click.native="withdraw(asset)" hover slot="activator" style="margin: 0 auto; margin-bottom: 1em;" :metadata="asset.schema.formatter(asset.asset)" :schema="asset.schema.name"></asset>
+            <span>Click to withdraw asset from Exchange</span>
+          </v-tooltip>
         </v-flex>
       </v-layout>
+      </div>
     </v-flex>
     <v-flex xs12 md6>
       <div class="header">
@@ -30,7 +35,7 @@
       <v-layout row wrap>
         <v-flex v-for="(asset, index) in personalAssets" xs12 md6 lg6 :key="index">
           <v-tooltip bottom>
-            <asset @click.native="deposit(asset)" hover slot="activator" style="margin: 0 auto; margin-bottom: 1em;" :metadata="asset.schema.formatter(asset.asset)"></asset>
+            <asset @click.native="deposit(asset)" hover slot="activator" style="margin: 0 auto; margin-bottom: 1em;" :metadata="asset.schema.formatter(asset.asset)" :schema="asset.schema.name"></asset>
             <span>Click to deposit asset to Exchange</span>
           </v-tooltip>
         </v-flex>
@@ -45,6 +50,8 @@
 // https://github.com/SortableJS/Vue.Draggable
 import Asset from '../components/Asset'
 
+import { encodeCall } from 'wyvern-schemas'
+
 export default {
   components: { Asset },
   metaInfo: {
@@ -54,9 +61,15 @@ export default {
     registerProxy: function() {
       this.$store.dispatch('registerProxy', { params: [], onError: console.log, onTxHash: console.log, onConfirm: console.log })
     },
+    withdraw: function(asset) {
+      /* TODO FIXME */
+      const transferABI = asset.schema.functions.transfer
+      const transferCall = encodeCall(transferABI, [this.$store.state.web3.base.account, asset.asset.toNumber()]).slice(2)
+      const proxyABI = {"target": this.$store.state.web3.proxy, "constant":false,"inputs":[{"name":"dest","type":"address"},{"name":"howToCall","type":"uint8"},{"name":"calldata","type":"bytes"}],"name":"proxyAssert","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+      this.$store.dispatch('rawSend', { abi: proxyABI, params: [transferABI.target, 0, Buffer.from(transferCall, 'hex')], onError: console.log, onTxHash: console.log, onConfirm: console.log })
+    },
     deposit: function(asset) {
       const abi = asset.schema.functions.transfer
-      console.log('deposit', asset, abi, this.$store.state.web3.proxy)
       this.$store.dispatch('rawSend', { abi: abi, params: [this.$store.state.web3.proxy, asset.asset.toNumber()], onError: console.log, onTxHash: console.log, onConfirm: console.log })
     }
   },

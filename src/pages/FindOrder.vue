@@ -25,7 +25,7 @@
     <v-layout row wrap v-if="orders">
       <v-flex xs12 md6 lg3 v-for="(order, index) in orders" :key="index">
         <router-link :to="'/orders/' + order.hash">
-          <order hover :order="order" :metadata="order.schema.formatter(order.metadata.fields._tokenId)"></order>
+          <order hover :order="order" :schema="order.schema.name" :metadata="order.schema.formatter(order.metadata.fields._tokenId)"></order>
         </router-link>
       </v-flex>
     </v-layout>

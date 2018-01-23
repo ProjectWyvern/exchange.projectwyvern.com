@@ -8,7 +8,6 @@
     "git-rev": "^0.2.1",
     "git-revision-webpack-plugin": "^2.5.1",
     "lodash": "^4.17.4",
-    "mobile-detect": "^1.4.1",
     "poi": "^9.6.1",
     "vue-analytics": "^5.8.0",
     "vue-lazyload": "^1.1.4",
