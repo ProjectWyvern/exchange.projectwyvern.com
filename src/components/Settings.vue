@@ -16,6 +16,11 @@
       <v-switch v-model="advancedMode" label="Advanced Mode"></v-switch>
     </v-list-tile-content>
   </v-list-tile>
+  <v-list-tile>
+    <v-list-tile-content>
+    Clear Local State
+    </v-list-tile-content>
+  </v-list-tile>
 </v-list>
 </template>
 

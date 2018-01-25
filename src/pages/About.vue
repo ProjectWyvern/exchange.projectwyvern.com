@@ -4,7 +4,7 @@
 The Wyvern Exchange is a decentralized digital asset exchange running on the Ethereum blockchain.
 </p>
 <p>
-This web application provides an interface to the Wyvern smart contracts, enabling users to buy and sell digital assets through the <a href="" target="_blank">Wyvern Protocol</a>.
+This web application provides an interface to the Wyvern smart contracts, enabling users to buy and sell digital assets through the <a href="https://projectwyvern.com" target="_blank">Wyvern Protocol</a>.
 <p>
 </p>
 <p>

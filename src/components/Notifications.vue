@@ -15,12 +15,12 @@
     <v-card class="notification">
       <v-card-title>
         <span>{{ format(n.type) }}</span>
-        <v-icon v-if="n.finalized" style="margin-left: 5px;" :class="'icon ' + n.status">{{ iconify(n.status) }}</v-icon>
+        <v-icon v-if="n.finalized" style="margin-left: 5px;" :class="'icon icon-' + n.status">{{ iconify(n.status) }}</v-icon>
         <v-progress-circular style="margin-left: 10px;" v-bind:indeterminate="true" size="20" v-if="!n.finalized"></v-progress-circular>
       </v-card-title>
       <v-card-actions>
         <v-btn class="nbtn" flat @click.native="viewTx(n.txHash)">View TX</v-btn>
-        <v-btn class="nbtn" flat @click.native="adjustTx(n.txHash)">Adjust TX</v-btn>
+        <v-btn class="nbtn" flat :disabled="n.finalized" @click.native="adjustTx(n.txHash)">Adjust TX</v-btn>
         <v-btn class="nbtn" flat @click.native="clear(index)">Clear</v-btn>
       </v-card-actions>
     </v-card>
@@ -96,15 +96,15 @@ export default {
   bottom: 0.15em;
 }
 
-.ok {
+.icon-ok {
   color: green !important;
 }
 
-.warn {
+.icon-warn {
   color: yellow !important;
 }
 
-.error {
+.icon-error {
   color: red !important;
 }
 </style>

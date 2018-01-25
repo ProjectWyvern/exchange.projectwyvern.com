@@ -10,7 +10,7 @@ Order {{ this.$route.params.hash }}
 </div>
 </v-flex>
 <v-flex xs12 v-if="order">
-<asset style="margin: 0 auto;" :metadata="schema.formatter(order.metadata.fields._tokenId)" :schema="schema.name"></asset>
+<asset style="margin: 0 auto;" :metadata="metadata" :schema="schema.name"></asset>
 </v-flex>
 <v-flex xs12 v-if="order">
 <div style="text-align: center; line-height: 4em;">
@@ -24,9 +24,13 @@ Order {{ this.$route.params.hash }}
 </v-flex>
 <v-flex xs12 v-if="order">
 <div style="margin: 0 auto; width: 100px;">
-<v-btn raised @click.native="match()">
+<v-btn v-if="!matching && !matched" raised @click.native="match()">
 Match
 </v-btn>
+<v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-if="matching && !matched" v-bind:indeterminate="true"></v-progress-circular>
+<v-icon v-if="matched" style="color: green; margin-left: 30px;">
+check_circle
+</v-icon>
 </div>
 </v-flex>
 </v-layout>
@@ -35,7 +39,7 @@ Match
 
 <script>
 import BigNumber from 'bignumber.js'
-import { encodeCall } from 'wyvern-schemas'
+import { encodeBuy, encodeSell, encodeCall } from 'wyvern-schemas'
 
 import Asset from '../components/Asset'
 import { WyvernProtocol } from '../aux'
@@ -49,42 +53,57 @@ export default {
   created: function() {
     this.$store.dispatch('fetchOrder', { hash: this.$route.params.hash })
   },
+  data: function() {
+    return {
+      matching: false,
+      matched: false
+    }
+  },
   methods: {
     match: function() {
-      const matchFunction = WyvernProtocol.EXCHANGE_ABI.filter(f => f.name === 'atomicMatch_')[0]
-      const buy = this.orderToMatch
-      const sell = this.order
-      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: console.log, onTxHash: console.log, onConfirm: console.log })
+      const buy = this.order.side === 0 ? this.order : this.orderToMatch
+      const sell = this.order.side === 0 ? this.orderToMatch : this.order
+      const onTxHash = () => { this.matching = true }
+      const onConfirm = () => { this.matched = true }
+      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: console.log, onTxHash: onTxHash, onConfirm: onConfirm })
     }
   },
   computed: {
+    metadata: function() {
+      return !this.schema ? {} : this.schema.formatter(this.order.metadata.nft)
+    },
     tokens: function() {
       return this.$store.state.web3.tokens ?
         [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
         : []
     },
     token: function() {
-      return this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
+      return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     expiry: function() {
-      return 'No Expiration'
+      return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + this.order.expirationTime.toNumber())
     },
     side: function() {
-      return 'For Sale'
+      return !this.order ? '' : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
     price: function() {
       return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
     },
     kind: function() {
-      return 'Fixed Price'
+      return !this.order ? '' : ({
+        0: 'Fixed Price',
+        1: 'English Auction',
+        2: 'Dutch Auction'
+      })[this.order.saleKind]
     },
     schema: function() {
-      return !this.order ? null : this.$store.state.web3.schemas.filter(s => s.name === this.order.metadata.schema)[0]
+      return (!this.order || !this.$store.state.web3.schemas) ? null : this.$store.state.web3.schemas.filter(s => s.name === this.order.metadata.schema)[0]
     },
     orderToMatch: function() {
-      const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
-      const calldata = encodeCall(this.schema.functions.transfer, [account, this.order.metadata.fields._tokenId])
-      return !this.order ? {} : {
+      if (!this.order || !this.$store.state.web3.base || !this.schema) return {}
+      const account = this.$store.state.web3.base.account
+      const { target, calldata, replacementPattern } = this.order.side === 0 ? encodeSell(this.schema, this.order.metadata.nft) : encodeBuy(this.schema, this.order.metadata.nft, account)
+      return {
         exchange: this.order.exchange,
         maker: account,
         taker: WyvernProtocol.NULL_ADDRESS,
@@ -93,10 +112,10 @@ export default {
         feeRecipient: account,
         side: (this.order.side + 1) % 2,
         saleKind: 0,
-        target: this.order.target,
+        target: target,
         howToCall: this.order.howToCall,
-        calldata: this.order.calldata, // todo fixme
-        replacementPattern: this.order.replacementPattern, // todo fixme
+        calldata: calldata,
+        replacementPattern: replacementPattern,
         metadataHash: '0x',
         paymentToken: this.order.paymentToken,
         basePrice: this.order.basePrice,

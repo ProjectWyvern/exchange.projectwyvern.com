@@ -4,7 +4,7 @@
     <v-flex xs12 md6>
       <div class="header">
       <v-icon style="margin-right: 0.5em;">device_hub</v-icon>
-      Exchange
+      Exchange <i style="font-size: 0.8em">(sorted by recency)</i>
       </div>
       <div v-if="!ready" style="margin-top: 2em; text-align: center;">
         <v-progress-circular size="40" v-bind:indeterminate="true"></v-progress-circular>
@@ -26,7 +26,7 @@
     <v-flex xs12 md6>
       <div class="header">
       <v-icon style="margin-right: 0.5em;">person</v-icon>
-      Personal
+      Personal <i style="font-size: 0.8em">(sorted by recency)</i>
       </div>
       <div v-if="!ready" style="margin-top: 2em; text-align: center;">
         <v-progress-circular size="40" v-bind:indeterminate="true"></v-progress-circular>
@@ -50,7 +50,7 @@
 // https://github.com/SortableJS/Vue.Draggable
 import Asset from '../components/Asset'
 
-import { encodeCall } from 'wyvern-schemas'
+import { encodeBuy, encodeCall } from 'wyvern-schemas'
 
 export default {
   components: { Asset },
@@ -62,15 +62,18 @@ export default {
       this.$store.dispatch('registerProxy', { params: [], onError: console.log, onTxHash: console.log, onConfirm: console.log })
     },
     withdraw: function(asset) {
-      /* TODO FIXME */
-      const transferABI = asset.schema.functions.transfer
-      const transferCall = encodeCall(transferABI, [this.$store.state.web3.base.account, asset.asset.toNumber()]).slice(2)
-      const proxyABI = {"target": this.$store.state.web3.proxy, "constant":false,"inputs":[{"name":"dest","type":"address"},{"name":"howToCall","type":"uint8"},{"name":"calldata","type":"bytes"}],"name":"proxyAssert","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
-      this.$store.dispatch('rawSend', { abi: proxyABI, params: [transferABI.target, 0, Buffer.from(transferCall, 'hex')], onError: console.log, onTxHash: console.log, onConfirm: console.log })
+      const { target, calldata } = encodeBuy(asset.schema, asset.asset, this.$store.state.web3.base.account)
+      const proxyABI = {"constant":false,"inputs":[{"name":"dest","type":"address"},{"name":"howToCall","type":"uint8"},{"name":"calldata","type":"bytes"}],"name":"proxyAssert","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+      const data = encodeCall(proxyABI, [target, 0, Buffer.from(calldata.slice(2), 'hex')])
+      this.$store.dispatch('rawSend', { target: this.$store.state.web3.proxy, data: data, amount: 0, onError: console.log, onTxHash: console.log, onConfirm: console.log })
     },
     deposit: function(asset) {
-      const abi = asset.schema.functions.transfer
-      this.$store.dispatch('rawSend', { abi: abi, params: [this.$store.state.web3.proxy, asset.asset.toNumber()], onError: console.log, onTxHash: console.log, onConfirm: console.log })
+      const abi = asset.schema.functions.transfer(asset.asset)
+      const recipient = abi.inputs.filter(i => i.kind === 'replaceable')[0]
+      recipient.value = this.$store.state.web3.proxy
+      const params = abi.inputs.map(i => i.value.toString())
+      const data = encodeCall(abi, params)
+      this.$store.dispatch('rawSend', { target: abi.target, data: data, amount: 0, onError: console.log, onTxHash: console.log, onConfirm: console.log })
     }
   },
   computed: {

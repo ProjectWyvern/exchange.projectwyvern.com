@@ -45,7 +45,7 @@ export default {
       ],
       servers: [
         {text: 'Localhost (Testing)', value: 'http://127.0.0.1:8080'},
-        {text: 'Wyvern Exchange [Rinkeby]', value: 'http://37.187.38.165:8080'}
+        {text: 'Wyvern Exchange [Rinkeby]', value: 'https://bookrinkeby.projectwyvern.com'}
       ]
     }
   },

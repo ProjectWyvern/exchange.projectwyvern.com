@@ -58,12 +58,12 @@ logger.debug({extra: {provider: provider}}, 'Chose web3 provider')
 const state = {
   notifications: [],
   settings: {
-    version: '0.2.0',
+    version: '0.3.0',
     gasPrice: null,
     nightMode: false,
     advancedMode: false,
     web3Provider: provider,
-    orderbookServer: 'http://37.187.38.165:8080'
+    orderbookServer: 'https://bookrinkeby.projectwyvern.com'
   },
   web3: {},
   orders: null,

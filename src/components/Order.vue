@@ -37,16 +37,20 @@ export default {
         : []
     },
     expiry: function() {
-      return 'No Expiration'
+      return this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + this.order.expirationTime
     },
     side: function() {
-      return 'For Sale'
+      return this.order.side === 0 ? 'For Purchase' : 'For Sale'
     },
     price: function() {
       return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
     },
     kind: function() {
-      return 'Fixed Price'
+      return ({
+        0: 'Fixed Price',
+        1: 'English Auction',
+        2: 'Dutch Auction'
+      })[this.order.saleKind]
     }
   }
 }

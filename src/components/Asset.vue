@@ -11,7 +11,7 @@
       <div style="width: 100%;">
         <h3 style="display: inline-block;">{{ metadata.title }}</h3>
       </div>
-      <div>{{ metadata.description }}</div><br />
+      <div style="font-size: 0.9em; max-width: 100%; word-wrap: break-word;">{{ metadata.description }}</div><br />
     </div>
   </v-card-title>
 </v-card>

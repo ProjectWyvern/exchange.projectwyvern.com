@@ -33,7 +33,7 @@
       <div v-if="!schema" class="category">
         <v-text-field style="max-width: 400px;" v-model="catfilter" label="Filter by name" name="catfilter"></v-text-field>
         <v-layout row wrap class="category-inner">
-          <v-flex xs12 md6 lg2 v-for="(schema, index) in schemas" :key="index">
+          <v-flex xs12 md6 lg3 v-for="(schema, index) in schemas" :key="index">
             <v-card raised hover style="padding: 5px; margin: 5px; width: 300px; height: 300px;" @click.native="category = schema.index">
               <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
               <v-card-title>
@@ -67,7 +67,7 @@
       </div><br />
       <div>
         <div v-for="(field, index) in fields" :key="index">
-          <v-text-field @change="s => values[index] = s" style="max-width: 400px;" :label="field.name + ' (' + field.type + ')'" :name="field.name"></v-text-field>
+          <v-text-field @input="unifyValues()" v-model="values[field.name]" style="max-width: 600px;" :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" :readonly="field.readOnly"></v-text-field>
         </div>
       </div>
       <v-btn color="primary" @click.native="step = 4">Continue</v-btn>
@@ -88,7 +88,7 @@
       <div class="explainer">
       Ensure this is the exact order you wish to place.
       </div><br />
-      <order v-if="schema && step == 5" :order="order" :metadata="schema.formatter(order.metadata.fields._tokenId)" :schema="schema.name"></order>
+      <order v-if="schema && step == 5" :order="order" :metadata="previewMetadata" :schema="schema.name"></order>
       <br />
       <v-btn color="primary" @click.native="post">Post Order</v-btn>
       <v-btn @click.native="step = 4" flat>Back</v-btn>
@@ -102,7 +102,7 @@
 import Vue from 'vue'
 import BigNumber from 'bignumber.js'
 
-import { encodeDefaultCall, encodeReplacementPattern } from 'wyvern-schemas'
+import { encodeSell, encodeBuy, encodeDefaultCall, encodeReplacementPattern } from 'wyvern-schemas'
 
 import Order from '../components/Order'
 import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
@@ -135,6 +135,9 @@ export default {
     }
   },
   computed: {
+    previewMetadata: function() {
+      return this.schema.formatter(this.order.metadata.nft)
+    },
     ready: function() {
       return this.$store.state.web3.base ? true : false
     },
@@ -153,22 +156,16 @@ export default {
       return this.schemas[this.category]
     },
     fields: function() {
-      return this.schema ?
-        this.schema.functions.transfer.inputs.filter(i => i.kind === 'asset')
-        : []
+      return this.schema ? this.schema.fields : []
     },
     order: function() {
+      try {
       const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
       const token = this.tokens.filter(t => t.address === this.token)[0]
-      const tokenDecimals = token ? token.decimals : 18
-      var calldata = '0x'
-      try {
-      if (this.schema && Object.keys(this.values).length === this.fields.length) {
-        // TODO FIXME
-        calldata = encodeDefaultCall(this.schema.functions.transfer, parseInt(this.values[0]))
-      }
+      const nft = this.schema.nftFromFields(this.values)
+      const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, nft, account) : encodeSell(this.schema, nft)
       const order = {
-        exchange: WyvernProtocol.DEPLOYED.rinkeby.WyvernExchange,
+        exchange: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network),
         maker: account,
         taker: WyvernProtocol.NULL_ADDRESS,
         makerFee: new BigNumber(0),
@@ -176,13 +173,13 @@ export default {
         feeRecipient: account,
         side: (this.side === 'buy' ? 0 : 1),
         saleKind: this.saleKind,
-        target: this.schema ? this.schema.functions.transfer.target : null,
+        target: target,
         howToCall: 0,
         calldata: calldata,
-        replacementPattern: this.schema ? encodeReplacementPattern(this.schema.functions.transfer) : null,
+        replacementPattern: replacementPattern,
         metadataHash: '0x',
         paymentToken: this.token,
-        basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), tokenDecimals) : null,
+        basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
         extra: 0,
         listingTime: new BigNumber(Math.round(Date.now() / 1000)),
         expirationTime: new BigNumber(this.expiration),
@@ -193,12 +190,8 @@ export default {
       } catch(e) { console.log(e) }
     },
     metadata: function() {
-      var fields = {}
-      this.fields.map((f, i) => {
-        fields[f.name] = parseInt(this.values[i])
-      })
       return {
-        fields: fields,
+        nft: this.schema.nftFromFields(this.values),
         schema: this.schema.name
       }
     }
@@ -216,6 +209,11 @@ export default {
     }
   },
   methods: {
+    unifyValues: function() {
+      if (this.schema.unifyFields) {
+        this.values = this.schema.unifyFields(this.values)
+      }
+    },
     post: async function() {
       var order = orderToJSON(this.order)
       const signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
