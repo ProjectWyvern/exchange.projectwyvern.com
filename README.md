@@ -2,7 +2,7 @@
 
 ## Project Wyvern Exchange Frontend Webapp
 
-[![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT)
+[![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT) [![Build Status](https://travis-ci.org/ProjectWyvern/exchange.projectwyvern.com.svg?branch=master)](https://travis-ci.org/ProjectWyvern/exchange.projectwyvern.com)
 
 ### Synopsis
 
@@ -16,6 +16,12 @@ Web frontend for the Wyvern Exchange.
 
 ```bash
 yarn run poi
+```
+
+#### Lint
+
+```bash
+yarn run lint
 ```
 
 #### Build for production
