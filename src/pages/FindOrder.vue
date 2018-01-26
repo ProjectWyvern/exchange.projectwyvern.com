@@ -53,16 +53,15 @@ export default {
   metaInfo: {
     title: 'Find Order'
   },
-  created: function() {
-    if (this.$store.state.orders === null)
-      this.$store.dispatch('fetchOrders')
+  created: function () {
+    if (this.$store.state.orders === null) { this.$store.dispatch('fetchOrders') }
   },
   methods: {
-    reload: function() {
+    reload: function () {
       this.$store.dispatch('fetchOrders')
     }
   },
-  data: function() {
+  data: function () {
     return {
       filter: null,
       side: -1,
@@ -90,17 +89,17 @@ export default {
     }
   },
   computed: {
-    schemas: function() {
+    schemas: function () {
       const s = (this.$store.state.web3.schemas || []).map(s => ({name: s.name, value: s.name}))
       const r = [].concat.apply({name: 'Any', value: null}, s)
       return r
     },
-    tokens: function() {
-      return this.$store.state.web3.tokens ?
-        [].concat.apply({symbol: 'Any', address: -1}, [this.$store.state.web3.tokens.canonicalWrappedEther], this.$store.state.web3.tokens.otherTokens)
+    tokens: function () {
+      return this.$store.state.web3.tokens
+        ? [].concat.apply({symbol: 'Any', address: -1}, [this.$store.state.web3.tokens.canonicalWrappedEther], this.$store.state.web3.tokens.otherTokens)
         : []
     },
-    orders: function() {
+    orders: function () {
       return !this.$store.state.web3.schemas ? null : !this.$store.state.orders ? null : this.$store.state.orders.map(o => {
         const schema = this.$store.state.web3.schemas.filter(s => s.name === o.metadata.schema)[0]
         o.schema = schema
@@ -113,10 +112,10 @@ export default {
           (this.saleKind === -1 || o.saleKind === this.saleKind) &&
           (this.side === -1 || o.side === this.side) &&
           (this.filter === null || o.formatted.title.toLowerCase().indexOf(this.filter.toLowerCase()) !== -1)
-        );
+        )
       })
     },
-    maxHeight: function() {
+    maxHeight: function () {
       return window.innerHeight - 210
     }
   }

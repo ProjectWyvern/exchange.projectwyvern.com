@@ -1,5 +1,5 @@
 <template>
-<v-app id="app" :dark="$store.state.settings.nightMode">
+<v-app id="app" :dark="nightMode">
   <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft" width="180">
     <v-list dense>
       <template v-for="(l, i) in links">
@@ -77,7 +77,23 @@ export default {
     title: '',
     titleTemplate: 'Wyvern Exchange • %s'
   },
+  methods: {
+    updateNightMode: function(nightMode) {
+      this.$vuetify.theme.primary = nightMode ? '#fff' : '#000'
+    }
+  },
+  created: function() {
+    this.updateNightMode(this.nightMode)
+  },
+  watch: {
+    nightMode: function(n, o) {
+      this.updateNightMode(n)
+    }
+  },
   computed: {
+    nightMode: function() {
+      return this.$store.state.settings.nightMode
+    },
     activePath: function() {
       return this.$route.path
     },
@@ -129,9 +145,13 @@ export default {
         { name: 'Find', icon: 'search', path: '/orders/find' },
         { name: 'Post', icon: 'create', path: '/orders/post' },
         { divider: true },
+        { section: 'Assets' },
+        { name: 'Directory', icon: 'view_list', path: '/assets/directory' },
+        { name: 'Schemas', icon: 'developer_board', path: '/assets/schemas' },
+        { divider: true },
         { section: 'Account' },
         { name: 'Assets', icon: 'domain', path: '/account/assets' },
-        { name: 'Profile', icon: 'person', path: '/account/profile' },
+        { name: 'Tokens', icon: 'attach_money', path: '/account/tokens' },
         { name: 'History', icon: 'history', path: '/account/history' },
         { divider: true },
         { section: 'Exchange' },

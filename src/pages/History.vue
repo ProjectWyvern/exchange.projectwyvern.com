@@ -11,7 +11,7 @@ Account Exchange usage history - sales, purchases, deposits, and withdrawals - c
 <script>
 export default {
   metaInfo: {
-    title: 'History'
+    title: 'Account History'
   }
 }
 </script>

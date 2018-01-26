@@ -45,23 +45,23 @@ export default {
         commitTx: 'Commit Transaction'
       })[type]
     },
-    viewTx: function(txHash) {
+    viewTx: function (txHash) {
       window.open('https://' + this.prefix + 'etherscan.io/tx/' + txHash)
     },
-    clear: function(index) {
+    clear: function (index) {
       this.$store.commit('clearNotification', index)
     },
-    clearAll: function() {
+    clearAll: function () {
       this.$store.commit('clearNotifications')
     }
   },
   computed: {
-    prefix: function() {
+    prefix: function () {
       return (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
         ? (this.$store.state.web3.base.network + '.') : ''
     },
     notifications: function () {
-      return this.$store.state.notifications;
+      return this.$store.state.notifications
     }
   }
 }

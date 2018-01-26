@@ -18,8 +18,6 @@
 </template>
 
 <script>
-import BigNumber from 'bignumber.js'
-
 import { WyvernProtocol } from '../aux'
 import Asset from './Asset'
 
@@ -28,24 +26,24 @@ export default {
   components: { Asset },
   props: ['order', 'schema', 'asset', 'metadata', 'signature', 'hover'],
   computed: {
-    token: function() {
+    token: function () {
       return this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
-    tokens: function() {
-      return this.$store.state.web3.tokens ?
-        [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
+    tokens: function () {
+      return this.$store.state.web3.tokens
+        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
         : []
     },
-    expiry: function() {
+    expiry: function () {
       return this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + this.order.expirationTime
     },
-    side: function() {
+    side: function () {
       return this.order.side === 0 ? 'For Purchase' : 'For Sale'
     },
-    price: function() {
+    price: function () {
       return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
     },
-    kind: function() {
+    kind: function () {
       return ({
         0: 'Fixed Price',
         1: 'English Auction',

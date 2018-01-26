@@ -55,19 +55,19 @@ import { encodeBuy, encodeCall } from 'wyvern-schemas'
 export default {
   components: { Asset },
   metaInfo: {
-    title: 'Assets'
+    title: 'Account Assets'
   },
   methods: {
-    registerProxy: function() {
+    registerProxy: function () {
       this.$store.dispatch('registerProxy', { params: [], onError: console.log, onTxHash: console.log, onConfirm: console.log })
     },
-    withdraw: function(asset) {
+    withdraw: function (asset) {
       const { target, calldata } = encodeBuy(asset.schema, asset.asset, this.$store.state.web3.base.account)
-      const proxyABI = {"constant":false,"inputs":[{"name":"dest","type":"address"},{"name":"howToCall","type":"uint8"},{"name":"calldata","type":"bytes"}],"name":"proxyAssert","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}
+      const proxyABI = {'constant': false, 'inputs': [{'name': 'dest', 'type': 'address'}, {'name': 'howToCall', 'type': 'uint8'}, {'name': 'calldata', 'type': 'bytes'}], 'name': 'proxyAssert', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}
       const data = encodeCall(proxyABI, [target, 0, Buffer.from(calldata.slice(2), 'hex')])
       this.$store.dispatch('rawSend', { target: this.$store.state.web3.proxy, data: data, amount: 0, onError: console.log, onTxHash: console.log, onConfirm: console.log })
     },
-    deposit: function(asset) {
+    deposit: function (asset) {
       const abi = asset.schema.functions.transfer(asset.asset)
       const recipient = abi.inputs.filter(i => i.kind === 'replaceable')[0]
       recipient.value = this.$store.state.web3.proxy
@@ -77,25 +77,25 @@ export default {
     }
   },
   computed: {
-    ready: function() {
+    ready: function () {
       return this.$store.state.web3.proxy !== undefined
     },
-    proxy: function() {
+    proxy: function () {
       return this.$store.state.web3.proxy
     },
-    containerStyle: function() {
+    containerStyle: function () {
       return {
-        maxHeight: (window.innerHeight - 220) + 'px', 
+        maxHeight: (window.innerHeight - 220) + 'px',
         overflow: 'auto'
       }
     },
-    personalAssets: function() {
+    personalAssets: function () {
       return this.assets.filter(a => !a.proxy)
     },
-    proxyAssets: function() {
+    proxyAssets: function () {
       return this.assets.filter(a => a.proxy)
     },
-    assets: function() {
+    assets: function () {
       return this.$store.state.web3.assets || []
     }
   }

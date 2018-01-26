@@ -22,7 +22,7 @@ export default {
   name: 'asset',
   props: ['metadata', 'schema', 'hover'],
   methods: {
-    navigate: function(url) {
+    navigate: function (url) {
       window.open(url, '_blank')
     }
   }

@@ -32,47 +32,47 @@ import { WyvernProtocol } from '../aux'
 
 export default {
   metaInfo: {
-    title: 'Profile'
+    title: 'Account Tokens'
   },
-  data: function() {
+  data: function () {
     return {
       amount: null
     }
   },
   methods: {
-    wrap: function() {
+    wrap: function () {
       const { target, calldata } = encodeWETHDeposit(this.tokens)
       const amount = WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), 18)
       console.log(amount)
       this.$store.dispatch('rawSend', { target: target, data: calldata, amount: amount, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     },
-    unwrap: function() {
+    unwrap: function () {
       const amount = WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), 18)
       const { target, calldata } = encodeWETHWithdrawal(this.tokens, amount)
       this.$store.dispatch('rawSend', { target: target, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     },
-    approve: function() {
+    approve: function () {
       // FIXME
       const amount = WyvernProtocol.toBaseUnitAmount(new BigNumber(10000000000000), 18).toString()
-      const abi = {"constant":false,"inputs":[{"name":"guy","type":"address"},{"name":"wad","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"}
+      const abi = {'constant': false, 'inputs': [{'name': 'guy', 'type': 'address'}, {'name': 'wad', 'type': 'uint256'}], 'name': 'approve', 'outputs': [{'name': '', 'type': 'bool'}], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}
       const calldata = encodeCall(abi, [WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network), amount])
       this.$store.dispatch('rawSend', { target: this.tokens.canonicalWrappedEther.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     }
   },
   computed: {
-    tokens: function() {
+    tokens: function () {
       return this.$store.state.web3.tokens ? this.$store.state.web3.tokens : {}
     },
-    base: function() {
-      return this.$store.state.web3.base ? true : false
+    base: function () {
+      return !!this.$store.state.web3.base
     },
-    account: function() {
+    account: function () {
       return this.$store.state.web3.base ? this.$store.state.web3.base.account : null
     },
-    unwrappedBalance: function() {
+    unwrappedBalance: function () {
       return this.$store.state.web3.base.unwrappedBalance
     },
-    wrappedBalance: function() {
+    wrappedBalance: function () {
       return this.$store.state.web3.base.wrappedBalance
     }
   }

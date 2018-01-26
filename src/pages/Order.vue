@@ -39,7 +39,7 @@ check_circle
 
 <script>
 import BigNumber from 'bignumber.js'
-import { encodeBuy, encodeSell, encodeCall } from 'wyvern-schemas'
+import { encodeBuy, encodeSell } from 'wyvern-schemas'
 
 import Asset from '../components/Asset'
 import { WyvernProtocol } from '../aux'
@@ -50,17 +50,17 @@ export default {
   metaInfo: {
     title: 'View Order'
   },
-  created: function() {
+  created: function () {
     this.$store.dispatch('fetchOrder', { hash: this.$route.params.hash })
   },
-  data: function() {
+  data: function () {
     return {
       matching: false,
       matched: false
     }
   },
   methods: {
-    match: function() {
+    match: function () {
       const buy = this.order.side === 0 ? this.order : this.orderToMatch
       const sell = this.order.side === 0 ? this.orderToMatch : this.order
       const onTxHash = () => { this.matching = true }
@@ -69,37 +69,37 @@ export default {
     }
   },
   computed: {
-    metadata: function() {
+    metadata: function () {
       return !this.schema ? {} : this.schema.formatter(this.order.metadata.nft)
     },
-    tokens: function() {
-      return this.$store.state.web3.tokens ?
-        [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
+    tokens: function () {
+      return this.$store.state.web3.tokens
+        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
         : []
     },
-    token: function() {
+    token: function () {
       return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
-    expiry: function() {
+    expiry: function () {
       return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + this.order.expirationTime.toNumber())
     },
-    side: function() {
+    side: function () {
       return !this.order ? '' : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
-    price: function() {
+    price: function () {
       return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
     },
-    kind: function() {
+    kind: function () {
       return !this.order ? '' : ({
         0: 'Fixed Price',
         1: 'English Auction',
         2: 'Dutch Auction'
       })[this.order.saleKind]
     },
-    schema: function() {
+    schema: function () {
       return (!this.order || !this.$store.state.web3.schemas) ? null : this.$store.state.web3.schemas.filter(s => s.name === this.order.metadata.schema)[0]
     },
-    orderToMatch: function() {
+    orderToMatch: function () {
       if (!this.order || !this.$store.state.web3.base || !this.schema) return {}
       const account = this.$store.state.web3.base.account
       const { target, calldata, replacementPattern } = this.order.side === 0 ? encodeSell(this.schema, this.order.metadata.nft) : encodeBuy(this.schema, this.order.metadata.nft, account)
@@ -123,12 +123,12 @@ export default {
         listingTime: new BigNumber(Math.round(Date.now() / 1000)),
         expirationTime: 0,
         salt: WyvernProtocol.generatePseudoRandomSalt(),
-        metadata: {} 
+        metadata: {}
       }
     },
-    order: function() {
+    order: function () {
       return this.$store.state.ordersByHash[this.$route.params.hash]
-    },
+    }
   }
 }
 </script>

@@ -20,7 +20,7 @@ Neither we nor anyone you trade with can steal your funds or prevent you from tr
 <p>
 <div class="small-heading">Buy or sell whatever you want.</div><br />
 The Wyvern protocol is representation-agnostic. If you can send it with an Ethereum transaction, you can buy or sell it on the Exchange.<br />
-The Wyvern Exchange streamlines UI/UX for common asset types - if you'd like your asset to be added, <a href="" target="_blank">let us know</a>.
+The Wyvern Exchange streamlines UI/UX for common asset types - if you'd like your asset to be added, <a href="https://github.com/projectwyvern/wyvern-schemas" target="_blank">let us know</a>.
 </p>
 <p>
 <div class="small-heading">Buy or sell the way you want.</div><br />

@@ -99,10 +99,9 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import BigNumber from 'bignumber.js'
 
-import { encodeSell, encodeBuy, encodeDefaultCall, encodeReplacementPattern } from 'wyvern-schemas'
+import { encodeSell, encodeBuy } from 'wyvern-schemas'
 
 import Order from '../components/Order'
 import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
@@ -114,9 +113,9 @@ export default {
   metaInfo: {
     title: 'Post Order'
   },
-  data: function() {
+  data: function () {
     const query = this.$route.query
-    const step = 1;
+    const step = 1
     return {
       catfilter: '',
       step: step,
@@ -127,7 +126,7 @@ export default {
       saleKinds: [
         {text: 'Fixed Price', value: 0},
         {text: 'English Auction', value: 1},
-        {text: 'Dutch Auction', value: 2} 
+        {text: 'Dutch Auction', value: 2}
       ],
       token: null,
       amount: null,
@@ -135,61 +134,61 @@ export default {
     }
   },
   computed: {
-    previewMetadata: function() {
+    previewMetadata: function () {
       return this.schema.formatter(this.order.metadata.nft)
     },
-    ready: function() {
-      return this.$store.state.web3.base ? true : false
+    ready: function () {
+      return !!this.$store.state.web3.base
     },
-    tokens: function() {
-      return this.$store.state.web3.tokens ?
-        [].concat.apply(this.$store.state.web3.tokens.canonicalWrappedEther)
+    tokens: function () {
+      return this.$store.state.web3.tokens
+        ? [].concat.apply(this.$store.state.web3.tokens.canonicalWrappedEther)
         : []
     },
-    schemas: function() {
+    schemas: function () {
       return (this.$store.state.web3.schemas || []).map((s, index) => {
         s.index = index
         return s
       }).filter(s => this.catfilter === '' || s.name.toLowerCase().indexOf(this.catfilter.toLowerCase()) !== -1)
     },
-    schema: function() {
+    schema: function () {
       return this.schemas[this.category]
     },
-    fields: function() {
+    fields: function () {
       return this.schema ? this.schema.fields : []
     },
-    order: function() {
+    order: function () {
       try {
-      const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
-      const token = this.tokens.filter(t => t.address === this.token)[0]
-      const nft = this.schema.nftFromFields(this.values)
-      const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, nft, account) : encodeSell(this.schema, nft)
-      const order = {
-        exchange: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network),
-        maker: account,
-        taker: WyvernProtocol.NULL_ADDRESS,
-        makerFee: new BigNumber(0),
-        takerFee: new BigNumber(0),
-        feeRecipient: account,
-        side: (this.side === 'buy' ? 0 : 1),
-        saleKind: this.saleKind,
-        target: target,
-        howToCall: 0,
-        calldata: calldata,
-        replacementPattern: replacementPattern,
-        metadataHash: '0x',
-        paymentToken: this.token,
-        basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
-        extra: 0,
-        listingTime: new BigNumber(Math.round(Date.now() / 1000)),
-        expirationTime: new BigNumber(this.expiration),
-        salt: WyvernProtocol.generatePseudoRandomSalt(),
-        metadata: this.metadata
-      }
-      return order
-      } catch(e) { console.log(e) }
+        const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
+        const token = this.tokens.filter(t => t.address === this.token)[0]
+        const nft = this.schema.nftFromFields(this.values)
+        const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, nft, account) : encodeSell(this.schema, nft)
+        const order = {
+          exchange: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network),
+          maker: account,
+          taker: WyvernProtocol.NULL_ADDRESS,
+          makerFee: new BigNumber(0),
+          takerFee: new BigNumber(0),
+          feeRecipient: account,
+          side: (this.side === 'buy' ? 0 : 1),
+          saleKind: this.saleKind,
+          target: target,
+          howToCall: 0,
+          calldata: calldata,
+          replacementPattern: replacementPattern,
+          metadataHash: '0x',
+          paymentToken: this.token,
+          basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
+          extra: 0,
+          listingTime: new BigNumber(Math.round(Date.now() / 1000)),
+          expirationTime: new BigNumber(this.expiration),
+          salt: WyvernProtocol.generatePseudoRandomSalt(),
+          metadata: this.metadata
+        }
+        return order
+      } catch (e) { console.log(e) }
     },
-    metadata: function() {
+    metadata: function () {
       return {
         nft: this.schema.nftFromFields(this.values),
         schema: this.schema.name
@@ -197,24 +196,24 @@ export default {
     }
   },
   watch: {
-    category: function(n, o) {
+    category: function (n, o) {
       const query = clone(this.$route.query)
       if (n !== null) { query.category = n } else { delete query.category }
       this.$router.push({query: query})
     },
-    side: function(n, o) {
+    side: function (n, o) {
       const query = clone(this.$route.query)
       if (n !== null) { query.side = n } else { delete query.side }
       this.$router.push({query: query})
     }
   },
   methods: {
-    unifyValues: function() {
+    unifyValues: function () {
       if (this.schema.unifyFields) {
         this.values = this.schema.unifyFields(this.values)
       }
     },
-    post: async function() {
+    post: async function () {
       var order = orderToJSON(this.order)
       const signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
       order.v = signature.v

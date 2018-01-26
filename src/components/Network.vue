@@ -36,7 +36,7 @@ const capitalize = (str) => {
 export default {
   name: 'network',
   props: ['close'],
-  data: function() {
+  data: function () {
     return {
       providers: [
         {text: 'Injected (Metamask/Parity)', value: 'injected'},
@@ -50,32 +50,32 @@ export default {
     }
   },
   computed: {
-    network: function() {
+    network: function () {
       return this.$store.state.web3.base ? capitalize(this.$store.state.web3.base.network) : null
     },
-    blockNumber: function() {
+    blockNumber: function () {
       return this.$store.state.web3.base ? this.$store.state.web3.base.blockNumber : null
     },
-    latency: function() {
+    latency: function () {
       return Math.round(this.$store.state.web3.latency * 1000) / 1000
     },
     provider: {
-      get: function() {
+      get: function () {
         return this.$store.state.settings.web3Provider
       },
-      set: function(v) {
+      set: function (v) {
         this.$store.commit('setWeb3Provider', v)
       }
     },
     server: {
-      get: function() {
+      get: function () {
         return this.$store.state.settings.orderbookServer
       },
-      set: function(v) {
+      set: function (v) {
         this.$store.commit('setOrderbookServer', v)
       }
     }
-  },
+  }
 }
 </script>
 

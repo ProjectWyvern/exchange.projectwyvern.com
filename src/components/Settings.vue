@@ -30,18 +30,18 @@ export default {
   props: ['close'],
   computed: {
     nightMode: {
-      get: function() {
+      get: function () {
         return this.$store.state.settings.nightMode
       },
-      set: function(v) {
+      set: function (v) {
         this.$store.commit('setNightMode', v)
       }
     },
     advancedMode: {
-      get: function() {
+      get: function () {
         return this.$store.state.settings.advancedMode
       },
-      set: function(v) {
+      set: function (v) {
         this.$store.commit('setAdvancedMode', v)
       }
     }

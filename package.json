@@ -5,6 +5,7 @@
     "bluebird": "^3.5.1",
     "buffer": "^5.0.8",
     "bunyan": "^1.8.12",
+    "eslint-plugin-html": "^4.0.2",
     "ethereumjs-abi": "https://github.com/ProjectWyvern/ethereumjs-abi.git",
     "ethereumjs-util": "^5.1.3",
     "git-rev": "^0.2.1",
@@ -23,6 +24,7 @@
     "wyvern-schemas": "file:../wyvern-schemas"
   },
   "scripts": {
+    "lint": "scripts/lint.sh",
     "build": "scripts/build.sh"
   }
 }
