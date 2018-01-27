@@ -1,7 +1,7 @@
 <template>
 <v-container>
 <p>
-Asset directory.
+Asset directory, coming soon!
 </p>
 </v-container>
 </template>

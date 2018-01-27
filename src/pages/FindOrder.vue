@@ -96,7 +96,7 @@ export default {
     },
     tokens: function () {
       return this.$store.state.web3.tokens
-        ? [].concat.apply({symbol: 'Any', address: -1}, [this.$store.state.web3.tokens.canonicalWrappedEther], this.$store.state.web3.tokens.otherTokens)
+        ? [].concat.apply([].concat.apply({symbol: 'Any', address: -1}, [this.$store.state.web3.tokens.canonicalWrappedEther]), this.$store.state.web3.tokens.otherTokens)
         : []
     },
     orders: function () {

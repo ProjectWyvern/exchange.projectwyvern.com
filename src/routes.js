@@ -6,7 +6,7 @@ import Directory from './pages/Directory'
 import Schemas from './pages/Schemas'
 import Asset from './pages/Asset'
 import Assets from './pages/Assets'
-import Tokens from './pages/Tokens'
+import Balances from './pages/Balances'
 import History from './pages/History'
 import Escrow from './pages/Escrow'
 import Stats from './pages/Stats'
@@ -22,7 +22,7 @@ export default [
   { path: '/assets/schemas', component: Schemas },
   { path: '/assets/:spec', component: Asset },
   { path: '/account/assets', component: Assets },
-  { path: '/account/tokens', component: Tokens },
+  { path: '/account/balances', component: Balances },
   { path: '/account/history', component: History },
   { path: '/account/escrow', component: Escrow },
   { path: '/stats', component: Stats },

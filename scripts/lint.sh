@@ -2,4 +2,4 @@
 
 set -e
 
-eslint --ext js,vue src/**/*.vue --fix
+eslint --ext js,vue src/**/*.vue src/*.vue --fix

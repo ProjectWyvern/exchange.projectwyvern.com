@@ -50,6 +50,9 @@ export default {
     }
   },
   computed: {
+    account: function () {
+      return this.$store.state.web3.base ? this.$store.state.web3.base.account : null
+    },
     network: function () {
       return this.$store.state.web3.base ? capitalize(this.$store.state.web3.base.network) : null
     },

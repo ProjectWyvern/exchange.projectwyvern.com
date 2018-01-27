@@ -1,7 +1,7 @@
 <template>
 <v-container>
 <p>
-Asset schema list.
+Asset schema list, coming soon!
 </p>
 </v-container>
 </template>

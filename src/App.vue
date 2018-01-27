@@ -66,6 +66,8 @@
 </template>
 
 <script>
+/* globals BRANCH:false,COMMITHASH:false */
+
 import Network from './components/Network'
 import Settings from './components/Settings'
 import Notifications from './components/Notifications'
@@ -78,62 +80,62 @@ export default {
     titleTemplate: 'Wyvern Exchange • %s'
   },
   methods: {
-    updateNightMode: function(nightMode) {
-      this.$vuetify.theme.primary = nightMode ? '#fff' : '#000'
+    updateNightMode: function (nightMode) {
+      this.$vuetify.theme.primary = nightMode ? '#777' : '#444'
     }
   },
-  created: function() {
+  created: function () {
     this.updateNightMode(this.nightMode)
   },
   watch: {
-    nightMode: function(n, o) {
+    nightMode: function (n, o) {
       this.updateNightMode(n)
     }
   },
   computed: {
-    nightMode: function() {
+    nightMode: function () {
       return this.$store.state.settings.nightMode
     },
-    activePath: function() {
+    activePath: function () {
       return this.$route.path
     },
-    hash: function() {
-      return COMMITHASH;
+    hash: function () {
+      return COMMITHASH
     },
-    branch: function() {
-      return BRANCH;
+    branch: function () {
+      return BRANCH
     },
-    notificationsColor: function() {
-      return this.$store.state.notifications.filter(n => n.status === 'warn').length > 0 ?
-        'blue' : this.$store.state.notifications.filter(n => n.status === 'error').length > 0 ?
-        'red' : 'green'
+    notificationsColor: function () {
+      return this.$store.state.notifications.filter(n => n.status === 'warn').length > 0
+        ? 'blue' : this.$store.state.notifications.filter(n => n.status === 'error').length > 0
+          ? 'red' : 'green'
     },
-    notificationCount: function() {
+    notificationCount: function () {
       return this.$store.state.notifications.length
     },
     drawerNetwork: {
-      get: function()   { return this.drawer === 'network' },
-      set: function(v)  {
+      get: function () { return this.drawer === 'network' },
+      set: function (v) {
         if (v) this.drawer = 'network'
-        else this.drawer = null 
+        else this.drawer = null
       }
     },
     drawerSettings: {
-      get: function()   { return this.drawer === 'settings' },
-      set: function(v)  {
+      get: function () { return this.drawer === 'settings' },
+      set: function (v) {
         if (v) this.drawer = 'settings'
-        else this.drawer = null 
+        else this.drawer = null
       }
     },
     drawerNotifications: {
-      get: function()   { return this.drawer === 'notifications' },
-      set: function(v)  {
+      get: function () { return this.drawer === 'notifications' },
+      set: function (v) {
         if (v) this.drawer = 'notifications'
-        else this.drawer = null 
+        else this.drawer = null
       }
-    } 
+    }
   },
-  data: function() {
+  data: function () {
     return {
       drawer: null,
       drawerLeft: true,
@@ -151,7 +153,7 @@ export default {
         { divider: true },
         { section: 'Account' },
         { name: 'Assets', icon: 'domain', path: '/account/assets' },
-        { name: 'Tokens', icon: 'attach_money', path: '/account/tokens' },
+        { name: 'Balances', icon: 'account_balance_wallet', path: '/account/balances' },
         { name: 'History', icon: 'history', path: '/account/history' },
         { divider: true },
         { section: 'Exchange' },

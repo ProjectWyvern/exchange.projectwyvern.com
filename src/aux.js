@@ -7,6 +7,9 @@ import * as WyvernSchemas from 'wyvern-schemas'
 
 import api from './api'
 import { logger } from './logging.js'
+import { method, WyvernExchange, ERC20, CanonicalWETH } from './abis/index.js'
+
+const encodeCall = WyvernSchemas.encodeCall
 
 export const orderToJSON = (order) => {
   var asJSON = {
@@ -85,9 +88,7 @@ const toProviderInstance = (str) => {
 }
 
 export var providerInstance
-
 export var protocolInstance
-
 export var web3
 
 var txCallbacks = {}
@@ -293,6 +294,7 @@ export const bind = (store) => {
   var account
   var schemas
   var tokens
+  var proxy
 
   poll = async () => {
     providerInstance = toProviderInstance(store.state.settings.web3Provider)
@@ -329,16 +331,31 @@ export const bind = (store) => {
       store.commit('setWeb3Tokens', tokens)
     }
 
+    if (proxy === null || network !== prevNetwork) {
+      proxy = await protocolInstance.wyvernProxyRegistry.proxies.callAsync(account)
+      store.commit('setWeb3Proxy', proxy === WyvernProtocol.NULL_ADDRESS ? null : proxy)
+    }
+
     prevNetwork = network
 
     const unwrappedBalance = account ? await promisify(c => web3.eth.getBalance(account, c)) : 0
-    const { target, calldata } = account ? WyvernSchemas.encodeWETHBalance(tokens, account) : {}
-    const wrappedBalance = account ? await promisify(c => web3.eth.call({from: account, to: target, data: calldata}, c)) : 0
-    const base = { account: account, blockNumber: blockNumber, network: network, unwrappedBalance: new BigNumber(unwrappedBalance), wrappedBalance: new BigNumber(wrappedBalance) }
+    const wrappedBalance = account ? await promisify(c => web3.eth.call({from: account, to: tokens.canonicalWrappedEther.address, data: encodeCall(method(CanonicalWETH, 'balanceOf'), [account])}, c)) : 0
+    const exchangeAvailable = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'availableFor'), [account, tokens.canonicalWrappedEther.address])}, c)) : 0
+    const exchangeLocked = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'lockedFor'), [account, tokens.canonicalWrappedEther.address])}, c)) : 0
+    const exchangeApproved = account ? await promisify(c => web3.eth.call({from: account, to: tokens.canonicalWrappedEther.address, data: encodeCall(method(CanonicalWETH, 'allowance'), [account, WyvernProtocol.getExchangeContractAddress(network)])}, c)) : 0
+    const base = { account: account, blockNumber: blockNumber, network: network, unwrappedBalance: new BigNumber(unwrappedBalance), wrappedBalance: new BigNumber(wrappedBalance), exchangeAvailable: new BigNumber(exchangeAvailable), exchangeLocked: new BigNumber(exchangeLocked), exchangeApproved: new BigNumber(exchangeApproved) }
     store.commit('setWeb3Base', base)
 
-    const proxy = await protocolInstance.wyvernProxyRegistry.proxies.callAsync(account)
-    store.commit('setWeb3Proxy', proxy === WyvernProtocol.NULL_ADDRESS ? null : proxy)
+    {
+      const balances = await Promise.all(tokens.otherTokens.map(async t => {
+        const balanceOnContract = account ? await promisify(c => web3.eth.call({from: account, to: t.address, data: encodeCall(method(ERC20, 'balanceOf'), [account])}, c)) : 0
+        const availableOnExchange = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'availableFor'), [account, t.address])}, c)) : 0
+        const lockedOnExchange = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'lockedFor'), [account, t.address])}, c)) : 0
+        const approvedOnExchange = account ? await promisify(c => web3.eth.call({from: account, to: t.address, data: encodeCall(method(ERC20, 'allowance'), [account, WyvernProtocol.getExchangeContractAddress(network)])}, c)) : 0
+        return { address: t.address, balanceOnContract: new BigNumber(balanceOnContract), availableOnExchange: new BigNumber(availableOnExchange), lockedOnExchange: new BigNumber(lockedOnExchange), approvedOnExchange: new BigNumber(approvedOnExchange) }
+      }))
+      store.commit('setWeb3Balances', balances)
+    }
 
     {
       const assetsBySchema = await Promise.all(schemas.map(async s => {

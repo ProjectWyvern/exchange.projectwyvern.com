@@ -124,6 +124,9 @@ const mutations = {
   setWeb3Tokens: (state, tokens) => {
     Vue.set(state.web3, 'tokens', tokens)
   },
+  setWeb3Balances: (state, balances) => {
+    Vue.set(state.web3, 'balances', balances)
+  },
   setOrderbookServer: (state, server) => {
     Vue.set(state.settings, 'orderbookServer', server)
   },

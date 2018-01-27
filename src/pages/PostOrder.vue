@@ -142,7 +142,7 @@ export default {
     },
     tokens: function () {
       return this.$store.state.web3.tokens
-        ? [].concat.apply(this.$store.state.web3.tokens.canonicalWrappedEther)
+        ? [].concat.apply(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
         : []
     },
     schemas: function () {
