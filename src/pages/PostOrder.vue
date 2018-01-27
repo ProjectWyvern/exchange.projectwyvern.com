@@ -33,7 +33,7 @@
       <div v-if="!schema" class="category">
         <v-text-field style="max-width: 400px;" v-model="catfilter" label="Filter by name" name="catfilter"></v-text-field>
         <v-layout row wrap class="category-inner">
-          <v-flex xs12 md6 lg3 v-for="(schema, index) in schemas" :key="index">
+          <v-flex xs12 md6 lg4 xl3 v-for="(schema, index) in schemas" :key="index">
             <v-card raised hover style="padding: 5px; margin: 5px; width: 300px; height: 300px;" @click.native="category = schema.index">
               <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
               <v-card-title>

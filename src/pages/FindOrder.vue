@@ -26,7 +26,7 @@
 <div class="holder" :style="{maxHeight: maxHeight + 'px'}">
   <v-container grid-list-lg style="height: 2000px;">
     <v-layout row wrap v-if="orders">
-      <v-flex xs12 md6 lg3 v-for="(order, index) in orders" :key="index">
+      <v-flex xs12 md6 lg4 xl3 v-for="(order, index) in orders" :key="index">
         <router-link :to="'/orders/' + order.hash">
           <order hover :order="order" :schema="order.schema.name" :metadata="order.schema.formatter(order.metadata.nft)"></order>
         </router-link>
