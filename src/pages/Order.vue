@@ -53,10 +53,14 @@ export default {
   created: function () {
     this.$store.dispatch('fetchOrder', { hash: this.$route.params.hash })
   },
+  destroyed: function () {
+    this.$store.commit('untrackOrder', this.hash)
+  },
   data: function () {
     return {
       matching: false,
-      matched: false
+      matched: false,
+      hash: this.$route.params.hash
     }
   },
   methods: {
@@ -81,7 +85,7 @@ export default {
       return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     expiry: function () {
-      return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + this.order.expirationTime.toNumber())
+      return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber())).toString())
     },
     side: function () {
       return !this.order ? '' : (this.order.side === 0 ? 'For Purchase' : 'For Sale')

@@ -286,6 +286,14 @@ export const web3Actions = {
   })
 }
 
+export const trackOrder = async (commit, hash) => {
+  if (!protocolInstance) {
+    return
+  }
+  const currentPrice = Math.pow(10, 18)
+  commit('setOrderData', { hash, key: 'currentPrice', value: currentPrice })
+}
+
 export var poll
 
 export const bind = (store) => {
@@ -346,6 +354,10 @@ export const bind = (store) => {
     const base = { account: account, blockNumber: blockNumber, network: network, unwrappedBalance: new BigNumber(unwrappedBalance), wrappedBalance: new BigNumber(wrappedBalance), exchangeAvailable: new BigNumber(exchangeAvailable), exchangeLocked: new BigNumber(exchangeLocked), exchangeApproved: new BigNumber(exchangeApproved) }
     store.commit('setWeb3Base', base)
 
+    await Promise.all(store.state.trackedOrders.map(hash => {
+      return trackOrder(store.commit, hash)
+    }))
+
     {
       const balances = await Promise.all(tokens.otherTokens.map(async t => {
         const balanceOnContract = account ? await promisify(c => web3.eth.call({from: account, to: t.address, data: encodeCall(method(ERC20, 'balanceOf'), [account])}, c)) : 0
@@ -359,34 +371,65 @@ export const bind = (store) => {
 
     {
       const assetsBySchema = await Promise.all(schemas.map(async s => {
+        if (!account) return []
         const transferEvent = s.events.transfer
-        if (!transferEvent) return []
-        const contract = web3.eth.contract([transferEvent]).at(transferEvent.target)
-        const destination = transferEvent.inputs.filter(i => i.kind === 'destination')[0]
-        const source = transferEvent.inputs.filter(i => i.kind === 'source')[0]
-        if (!destination || !source) return [] // TODO
-        var receiveFilter = {}
-        receiveFilter[destination.name] = [account]
-        if (proxy !== null) receiveFilter[destination.name].push(proxy)
-        const receiveEvents = await promisify(c => contract[transferEvent.name](receiveFilter, {fromBlock: 0}).get(c))
-        var sendFilter = {}
-        sendFilter[source.name] = [account]
-        if (proxy !== null) sendFilter[source.name].push(proxy)
-        const sendEvents = await promisify(c => contract[transferEvent.name](sendFilter, {fromBlock: 0}).get(c))
-        const assets = receiveEvents.filter(rE => {
-          const asset = transferEvent.nftFromInputs(rE.args)
-          return sendEvents.filter(sE => JSON.stringify(transferEvent.nftFromInputs(sE.args)) === JSON.stringify(asset) &&
-            (sE.args[source.name] === rE.args[destination.name]) &&
-            (sE.blockNumber > rE.blockNumber || (sE.blockNumber === rE.blockNumber && sE.transactionIndex > rE.transactionIndex))).length === 0
-        }).map(rE => ({
-          schema: s,
-          asset: transferEvent.nftFromInputs(rE.args),
-          proxy: rE.args[destination.name] === proxy
-        }))
-        return assets
+        const tokensOfOwnerByIndexFunction = s.functions.tokensOfOwnerByIndex
+        if (transferEvent) {
+          const contract = web3.eth.contract([transferEvent]).at(transferEvent.target)
+          const destination = transferEvent.inputs.filter(i => i.kind === 'destination')[0]
+          const source = transferEvent.inputs.filter(i => i.kind === 'source')[0]
+          if (!destination || !source) return [] // TODO
+          var receiveFilter = {}
+          receiveFilter[destination.name] = [account]
+          if (proxy !== null) receiveFilter[destination.name].push(proxy)
+          const receiveEvents = await promisify(c => contract[transferEvent.name](receiveFilter, {fromBlock: 0}).get(c))
+          var sendFilter = {}
+          sendFilter[source.name] = [account]
+          if (proxy !== null) sendFilter[source.name].push(proxy)
+          const sendEvents = await promisify(c => contract[transferEvent.name](sendFilter, {fromBlock: 0}).get(c))
+          const assets = receiveEvents.filter(rE => {
+            const asset = transferEvent.nftFromInputs(rE.args)
+            return sendEvents.filter(sE => JSON.stringify(transferEvent.nftFromInputs(sE.args)) === JSON.stringify(asset) &&
+              (sE.args[source.name] === rE.args[destination.name]) &&
+              (sE.blockNumber > rE.blockNumber || (sE.blockNumber === rE.blockNumber && sE.transactionIndex > rE.transactionIndex))).length === 0
+          }).map(rE => ({
+            schema: s,
+            asset: transferEvent.nftFromInputs(rE.args),
+            proxy: rE.args[destination.name] === proxy
+          }))
+          return assets
+        } else if (tokensOfOwnerByIndexFunction) {
+          const contract = web3.eth.contract([tokensOfOwnerByIndexFunction]).at(tokensOfOwnerByIndexFunction.target)
+          const owner = tokensOfOwnerByIndexFunction.inputs.filter(i => i.kind === 'owner')[0]
+          const index = tokensOfOwnerByIndexFunction.inputs.filter(i => i.kind === 'index')[0]
+          if (!owner || !index) return []
+          var assets = []
+          const fetch = async (indexValue, address, isProxy) => {
+            owner.value = address
+            index.value = indexValue
+            const result = await promisify(c => contract[tokensOfOwnerByIndexFunction.name].call(owner.value, index.value, {from: account}, c))
+            const nft = tokensOfOwnerByIndexFunction.nftFromOutputs(result)
+            if (nft === null) {
+            } else {
+              assets.push({schema: s, asset: nft, proxy: isProxy})
+              return fetch(indexValue + 1)
+            }
+          }
+          await fetch(0, account, false)
+          await fetch(0, proxy, true)
+          return assets
+        } else {
+          return []
+        }
       }))
       const assets = [].concat.apply(...assetsBySchema).reverse()
       store.commit('setWeb3Assets', assets)
+    }
+
+    {
+      const contract = web3.eth.contract(WyvernExchange).at(WyvernProtocol.getExchangeContractAddress(network))
+      const events = await promisify(c => contract.allEvents({fromBlock: 0}).get(c))
+      console.log('exchange events', events)
     }
 
     const end = Date.now() / 1000

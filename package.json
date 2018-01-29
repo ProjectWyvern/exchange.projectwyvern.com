@@ -26,5 +26,11 @@
   "scripts": {
     "lint": "scripts/lint.sh",
     "build": "scripts/build.sh"
+  },
+  "devDependencies": {
+    "react-snap": "^1.11.0"
+  },
+  "reactSnap": {
+    "source": "docs"
   }
 }

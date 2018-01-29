@@ -7,7 +7,7 @@ import VuexPersistence from 'vuex-persist'
 
 import { logger } from './logging.js'
 import api from './api.js'
-import { poll, web3Actions, bind } from './aux.js'
+import { poll, web3Actions, trackOrder, bind } from './aux.js'
 
 Vue.use(Vuex)
 
@@ -67,7 +67,8 @@ const state = {
   },
   web3: {},
   orders: null,
-  ordersByHash: {}
+  ordersByHash: {},
+  trackedOrders: []
 }
 
 try {
@@ -89,8 +90,11 @@ const actions = Object.assign({
     commit('setOrders', orders)
   },
   fetchOrder: async ({ state, commit }, { hash }) => {
+    commit('setOrder', { hash, order: null })
     const order = await api.order(state.settings.orderbookServer, hash)
     commit('setOrder', { hash, order })
+    commit('trackOrder', hash)
+    await trackOrder(commit, hash)
   }
 }, web3Actions)
 
@@ -133,8 +137,17 @@ const mutations = {
   setOrders: (state, orders) => {
     Vue.set(state, 'orders', orders)
   },
+  trackOrder: (state, hash) => {
+    state.trackedOrders.push(hash)
+  },
+  untrackOrder: (state, hash) => {
+    state.trackedOrders = state.trackedOrders.filter(h => h !== hash)
+  },
   setOrder: (state, { order, hash }) => {
     Vue.set(state.ordersByHash, hash, order)
+  },
+  setOrderData: (state, { hash, key, value }) => {
+    Vue.set(state.ordersByHash[hash], key, value)
   },
   commitTx: (state, { txHash, params }) => {
     logger.info({extra: { txHash, params }}, 'Transaction committed')

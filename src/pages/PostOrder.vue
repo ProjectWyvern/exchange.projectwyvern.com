@@ -15,7 +15,9 @@
   </v-stepper-header>
   <v-stepper-items>
    <v-stepper-content step="1">
-      <div class="header">Select the kind of asset you want to buy or sell.</div>
+      <div class="explainer">
+      Select the kind of asset you want to buy or sell from the available categories, or select the "Custom" category to specify all fields manually.
+      </div>
       <div v-if="schema" style="margin-bottom: 1em;">
         <v-card raised style="padding: 5px; margin: 5px; width: 300px; height: 350px;">
           <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
@@ -63,7 +65,7 @@
     </v-stepper-content>
     <v-stepper-content step="3">
       <div class="explainer">
-      Specify asset information.
+      Specify asset information, identifying the particular asset or class of assets you wish to buy or sell.
       </div><br />
       <div>
         <div v-for="(field, index) in fields" :key="index">
@@ -75,18 +77,35 @@
     </v-stepper-content>
     <v-stepper-content step="4">
       <div class="explainer">
-      Configure order parameters.
+      Configure order parameters, the conditions under which you will buy or sell the asset in question.
       </div><br />
-      <v-select style="max-width: 400px;" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-value="value" item-text="text"></v-select>
-      <v-select style="max-width: 400px;" v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address"></v-select>
-      <v-text-field style="max-width: 400px;" v-model="amount" label="Price (tokens)"></v-text-field>
-      <v-text-field style="max-width: 400px;" v-model="expiration" label="Order expiration (0 for no expiry)"></v-text-field>
+      <v-select prepend-icon="compare_arrows" style="max-width: 400px;" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-value="value" item-text="text"></v-select>
+      <v-select prepend-icon="account_balance_wallet" style="max-width: 400px;" v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address"></v-select>
+      <v-text-field prepend-icon="payment" style="max-width: 400px;" v-model="amount" :label="saleKind === 0 ? 'Price (tokens)': 'Starting price (tokens)'"></v-text-field>
+      <v-text-field v-if="saleKind === 1" prepend-icon="publish" style="max-width: 400px;" v-model="minimumBidIncrement" label="Minimum bid increment (tokens)"></v-text-field>
+      <v-text-field v-if="saleKind === 2" prepend-icon="publish" style="max-width: 400px;" v-model="endingPrice" label="Ending price (tokens)"></v-text-field>
+      <v-menu style="max-width: 400px;" lazy :close-on-content-click="false" v-model="dateMenu" transition="scale-transition" offset-y full-width :nudge-right="40" max-width="290px" min-width="290px">
+        <v-text-field slot="activator" label="Order expiration date (default never)" v-model="expirationDate" prepend-icon="event" readonly></v-text-field>
+        <v-date-picker v-model="expirationDate" no-title scrollable actions>
+          <template slot-scope="{ save, cancel }">
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn flat color="primary" @click="cancel">Cancel</v-btn>
+              <v-btn flat color="primary" @click="save">OK</v-btn>
+            </v-card-actions>
+          </template>
+        </v-date-picker>
+      </v-menu>
+      <v-menu v-if="expirationDate !== null" style="max-width: 400px;" lazy :close-on-content-click="false" v-model="timeMenu" transition="scale-transition" offset-y full-width :nudge-right="40" max-width="290px" min-width="290px">
+        <v-text-field slot="activator" label="Order expiration time" v-model="expirationTime" prepend-icon="access_time" readonly></v-text-field>
+        <v-time-picker v-model="expirationTime" format="24hr" autosave></v-time-picker>
+      </v-menu>
       <v-btn color="primary" @click.native="step = 5">Continue</v-btn>
       <v-btn @click.native="step = 3" flat>Back</v-btn>
     </v-stepper-content>
     <v-stepper-content step="5">
       <div class="explainer">
-      Ensure this is the exact order you wish to place.
+      Ensure this is the exact order you wish to place. Once you press "Post Order", you will be prompted to sign the order, then it will be submitted to the orderbook.
       </div><br />
       <order v-if="schema && step == 5" :order="order" :metadata="previewMetadata" :schema="schema.name"></order>
       <br />
@@ -130,7 +149,12 @@ export default {
       ],
       token: null,
       amount: null,
-      expiration: 0
+      minimumBidIncrement: null,
+      endingPrice: null,
+      dateMenu: false,
+      timeMenu: false,
+      expirationDate: null,
+      expirationTime: null
     }
   },
   computed: {
@@ -157,6 +181,20 @@ export default {
     fields: function () {
       return this.schema ? this.schema.fields : []
     },
+    expiration: function () {
+      if (this.expirationDate === null && this.expirationTime === null) {
+        return 0
+      }
+      var dateStr = this.expirationDate
+      if (this.expirationTime !== null) {
+        dateStr += ' ' + this.expirationTime
+      }
+      const offset = (new Date()).getTimezoneOffset()
+      return Date.parse(dateStr) + offset
+    },
+    extra: function () {
+      return this.saleKind === 0 ? 0 : (this.saleKind === 2 ? this.endingPrice : this.minimumBidIncrement)
+    },
     order: function () {
       try {
         const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
@@ -179,7 +217,7 @@ export default {
           metadataHash: '0x',
           paymentToken: this.token,
           basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
-          extra: 0,
+          extra: this.extra,
           listingTime: new BigNumber(Math.round(Date.now() / 1000)),
           expirationTime: new BigNumber(this.expiration),
           salt: WyvernProtocol.generatePseudoRandomSalt(),
@@ -214,6 +252,7 @@ export default {
       }
     },
     post: async function () {
+      console.log(this.order)
       var order = orderToJSON(this.order)
       const signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
       order.v = signature.v
@@ -230,6 +269,9 @@ export default {
 
 <style scoped>
 .explainer {
+  padding-top: 1em;
+  padding-bottom: 1em;
+  font-size: 1.0em;
 }
 
 .header {
@@ -242,5 +284,4 @@ export default {
   max-height: 400px;
   overflow: auto;
 }
-
 </style>
