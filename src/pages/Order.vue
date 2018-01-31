@@ -18,7 +18,7 @@ Order {{ this.$route.params.hash }}
 <div class="side">{{ side }}</div>
 <div class="expiry">{{ expiry }}</div>
 <div class="kind">{{ kind }}</div>
-<div class="price">{{ price }} {{ token.symbol }}</div>
+<div v-if="price" class="price">{{ price }} {{ token.symbol }}</div>
 </div>
 </div>
 </v-flex>
@@ -91,7 +91,7 @@ export default {
       return !this.order ? '' : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
     price: function () {
-      return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
+      return this.order.currentPrice ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null
     },
     kind: function () {
       return !this.order ? '' : ({
@@ -113,14 +113,15 @@ export default {
         taker: WyvernProtocol.NULL_ADDRESS,
         makerFee: new BigNumber(0),
         takerFee: new BigNumber(0),
-        feeRecipient: account,
+        feeRecipient: WyvernProtocol.NULL_ADDRESS,
         side: (this.order.side + 1) % 2,
         saleKind: 0,
         target: target,
         howToCall: this.order.howToCall,
         calldata: calldata,
         replacementPattern: replacementPattern,
-        metadataHash: '0x',
+        staticTarget: WyvernProtocol.NULL_ADDRESS,
+        staticExtradata: '0x',
         paymentToken: this.order.paymentToken,
         basePrice: this.order.basePrice,
         extra: 0,

@@ -25,7 +25,8 @@ export const orderToJSON = (order) => {
     howToCall: order.howToCall.toString(),
     calldata: order.calldata,
     replacementPattern: order.replacementPattern,
-    metadataHash: order.metadataHash,
+    staticTarget: order.staticTarget.toLowerCase(),
+    staticExtradata: order.staticExtradata,
     paymentToken: order.paymentToken.toLowerCase(),
     basePrice: order.basePrice.toString(),
     extra: order.extra.toString(),
@@ -34,6 +35,7 @@ export const orderToJSON = (order) => {
     salt: order.salt.toString()
   }
   const hash = WyvernProtocol.getOrderHashHex(asJSON)
+  console.log('hash', hash)
   asJSON.hash = hash
   asJSON.metadata = order.metadata
   return asJSON
@@ -57,7 +59,8 @@ export const orderFromJSON = (order) => {
     howToCall: JSON.parse(order.howToCall),
     calldata: order.calldata,
     replacementPattern: order.replacementPattern,
-    metadataHash: order.metadataHash,
+    staticTarget: order.staticTarget,
+    staticExtradata: order.staticExtradata,
     paymentToken: order.paymentToken,
     basePrice: new BigNumber(order.basePrice),
     extra: new BigNumber(order.extra),
@@ -144,15 +147,25 @@ const wrapSend = (contract, method) => {
 }
 
 const postOrder = async ({ state, commit }, { order, callback }) => {
-  const valid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
-    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.paymentToken],
+  const hash = await protocolInstance.wyvernExchange.hashOrder_.callAsync(
+    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
     [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
     order.side,
     order.saleKind,
     order.howToCall,
     order.calldata,
     order.replacementPattern,
-    order.metadataHash,
+    order.staticExtradata)
+  if (hash !== order.hash) throw new Error('Hashes did not match: ', hash + ', ' + order.hash)
+  const valid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
+    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+    [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+    order.side,
+    order.saleKind,
+    order.howToCall,
+    order.calldata,
+    order.replacementPattern,
+    order.staticExtradata,
     parseInt(order.v),
     order.r || '0x',
     order.s || '0x')
@@ -183,38 +196,38 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
   }
 
   const buyValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
-    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken],
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken],
     [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
     buy.side,
     buy.saleKind,
     buy.howToCall,
     buy.calldata,
     buy.replacementPattern,
-    buy.metadataHash,
+    buy.staticExtradata,
     buy.v, buy.r, buy.s,
     { from: account })
   console.log('buyValid', buyValid)
   const sellValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
-    [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
     [sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
     sell.side,
     sell.saleKind,
     sell.howToCall,
     sell.calldata,
     sell.replacementPattern,
-    sell.metadataHash,
+    sell.staticExtradata,
     sell.v, sell.r, sell.s)
   console.log('sellValid', sellValid)
   const ordersCanMatch = await protocolInstance.wyvernExchange.ordersCanMatch_.callAsync(
-    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
     [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
     [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
     buy.calldata,
     sell.calldata,
     buy.replacementPattern,
     sell.replacementPattern,
-    buy.metadataHash,
-    sell.metadataHash,
+    buy.staticExtradata,
+    sell.staticExtradata,
     { from: account }
   )
   console.log('ordersCanMatch', ordersCanMatch)
@@ -228,15 +241,15 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
   console.log('sellProxySim', sellProxySim)
 
   const atomicMatchSimulation = await protocolInstance.wyvernExchange.atomicMatch_.estimateGasAsync(
-    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
     [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
     [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
     buy.calldata,
     sell.calldata,
     buy.replacementPattern,
     sell.replacementPattern,
-    buy.metadataHash,
-    sell.metadataHash,
+    buy.staticExtradata,
+    sell.staticExtradata,
     [buy.v, sell.v],
     [buy.r, buy.s, sell.r, sell.s],
     { from: account }
@@ -244,15 +257,15 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
   console.log('atomicMatchSimulation', atomicMatchSimulation)
 
   const txHash = await protocolInstance.wyvernExchange.atomicMatch_.sendTransactionAsync(
-    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.paymentToken],
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
     [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
     [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
     buy.calldata,
     sell.calldata,
     buy.replacementPattern,
     sell.replacementPattern,
-    buy.metadataHash,
-    sell.metadataHash,
+    buy.staticExtradata,
+    sell.staticExtradata,
     [buy.v, sell.v],
     [buy.r, buy.s, sell.r, sell.s],
     { from: account }
@@ -286,12 +299,22 @@ export const web3Actions = {
   })
 }
 
-export const trackOrder = async (commit, hash) => {
+export const trackOrder = async (store, hash) => {
   if (!protocolInstance) {
     return
   }
-  const currentPrice = Math.pow(10, 18)
-  commit('setOrderData', { hash, key: 'currentPrice', value: currentPrice })
+  const order = store.state.ordersByHash[hash]
+  const currentPrice = await protocolInstance.wyvernExchange.calculateCurrentPrice_.callAsync(
+    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+    [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+    order.side,
+    order.saleKind,
+    order.howToCall,
+    order.calldata,
+    order.replacementPattern,
+    order.staticExtradata
+  )
+  store.commit('setOrderData', { hash, key: 'currentPrice', value: currentPrice })
 }
 
 export var poll
@@ -341,7 +364,10 @@ export const bind = (store) => {
 
     if (proxy === null || network !== prevNetwork) {
       proxy = await protocolInstance.wyvernProxyRegistry.proxies.callAsync(account)
-      store.commit('setWeb3Proxy', proxy === WyvernProtocol.NULL_ADDRESS ? null : proxy)
+      if (proxy === WyvernProtocol.NULL_ADDRESS) {
+        proxy = null
+      }
+      store.commit('setWeb3Proxy', proxy)
     }
 
     prevNetwork = network
@@ -355,7 +381,7 @@ export const bind = (store) => {
     store.commit('setWeb3Base', base)
 
     await Promise.all(store.state.trackedOrders.map(hash => {
-      return trackOrder(store.commit, hash)
+      return trackOrder(store, hash)
     }))
 
     {
@@ -422,7 +448,7 @@ export const bind = (store) => {
           return []
         }
       }))
-      const assets = [].concat.apply(...assetsBySchema).reverse()
+      const assets = [].concat(...assetsBySchema).reverse()
       store.commit('setWeb3Assets', assets)
     }
 
@@ -436,7 +462,7 @@ export const bind = (store) => {
     const diff = end - start
     logger.debug({extra: {latency: latency, diff: diff}}, 'Reloaded web3 state')
   }
-  // poll()
+  poll()
   setInterval(poll, 1000)
 }
 

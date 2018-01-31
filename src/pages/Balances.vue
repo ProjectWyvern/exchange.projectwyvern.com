@@ -113,7 +113,7 @@ export default {
     },
     withdraw: function () {
       const amount = WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), 18)
-      const calldata = encodeCall(method(WyvernExchange, 'withdraw'), [this.$store.state.web3.base.account, this.tokens.canonicalWrappedEther.address, amount.toString(), this.$store.state.web3.base.account])
+      const calldata = encodeCall(method(WyvernExchange, 'withdraw'), [this.tokens.canonicalWrappedEther.address, amount.toString(), this.$store.state.web3.base.account])
       this.$store.dispatch('rawSend', { target: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network), data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     },
     approve: function () {

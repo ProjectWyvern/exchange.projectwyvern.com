@@ -94,7 +94,7 @@ const actions = Object.assign({
     const order = await api.order(state.settings.orderbookServer, hash)
     commit('setOrder', { hash, order })
     commit('trackOrder', hash)
-    await trackOrder(commit, hash)
+    await trackOrder({ state, commit }, hash)
   }
 }, web3Actions)
 

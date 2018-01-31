@@ -193,7 +193,7 @@ export default {
       return Date.parse(dateStr) + offset
     },
     extra: function () {
-      return this.saleKind === 0 ? 0 : (this.saleKind === 2 ? this.endingPrice : this.minimumBidIncrement)
+      return this.saleKind === 0 ? 0 : (this.saleKind === 2 ? Math.abs(this.amount - this.endingPrice) : this.minimumBidIncrement)
     },
     order: function () {
       try {
@@ -214,10 +214,11 @@ export default {
           howToCall: 0,
           calldata: calldata,
           replacementPattern: replacementPattern,
-          metadataHash: '0x',
+          staticTarget: WyvernProtocol.NULL_ADDRESS,
+          staticExtradata: '0x',
           paymentToken: this.token,
           basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
-          extra: this.extra,
+          extra: WyvernProtocol.toBaseUnitAmount(new BigNumber(this.extra), token.decimals),
           listingTime: new BigNumber(Math.round(Date.now() / 1000)),
           expirationTime: new BigNumber(this.expiration),
           salt: WyvernProtocol.generatePseudoRandomSalt(),
