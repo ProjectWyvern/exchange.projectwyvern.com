@@ -175,21 +175,22 @@ const postOrder = async ({ state, commit }, { order, callback }) => {
 }
 
 const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, onConfirm }) => {
-  console.log('atomicMatch', buy, sell)
+  console.log('atomicMatch', JSON.stringify({buy: buy, sell: sell}))
   const accounts = await promisify(web3.eth.getAccounts)
   const account = accounts[0]
   console.log('from', account)
-  console.log(protocolInstance.wyvernExchange)
   console.log('buy.maker', buy.maker)
   console.log('sell.maker', sell.maker)
-  web3.eth.defaultAccount = account
 
   /* this is a bug, short-circuit not working properly */
+  var sellUnsigned
   if (!buy.r || !buy.s) {
+    sellUnsigned = false
     buy.v = sell.v
     buy.r = sell.r
     buy.s = sell.s
   } else {
+    sellUnsigned = true
     sell.v = buy.v
     sell.r = buy.r
     sell.s = buy.s
@@ -205,7 +206,7 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
     buy.replacementPattern,
     buy.staticExtradata,
     buy.v, buy.r, buy.s,
-    { from: account })
+    sellUnsigned ? {} : { from: account })
   console.log('buyValid', buyValid)
   const sellValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
     [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
@@ -216,7 +217,8 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
     sell.calldata,
     sell.replacementPattern,
     sell.staticExtradata,
-    sell.v, sell.r, sell.s)
+    sell.v, sell.r, sell.s,
+    sellUnsigned ? { from: account } : {})
   console.log('sellValid', sellValid)
   const ordersCanMatch = await protocolInstance.wyvernExchange.ordersCanMatch_.callAsync(
     [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
@@ -374,10 +376,8 @@ export const bind = (store) => {
 
     const unwrappedBalance = account ? await promisify(c => web3.eth.getBalance(account, c)) : 0
     const wrappedBalance = account ? await promisify(c => web3.eth.call({from: account, to: tokens.canonicalWrappedEther.address, data: encodeCall(method(CanonicalWETH, 'balanceOf'), [account])}, c)) : 0
-    const exchangeAvailable = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'availableFor'), [account, tokens.canonicalWrappedEther.address])}, c)) : 0
-    const exchangeLocked = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'lockedFor'), [account, tokens.canonicalWrappedEther.address])}, c)) : 0
     const exchangeApproved = account ? await promisify(c => web3.eth.call({from: account, to: tokens.canonicalWrappedEther.address, data: encodeCall(method(CanonicalWETH, 'allowance'), [account, WyvernProtocol.getExchangeContractAddress(network)])}, c)) : 0
-    const base = { account: account, blockNumber: blockNumber, network: network, unwrappedBalance: new BigNumber(unwrappedBalance), wrappedBalance: new BigNumber(wrappedBalance), exchangeAvailable: new BigNumber(exchangeAvailable), exchangeLocked: new BigNumber(exchangeLocked), exchangeApproved: new BigNumber(exchangeApproved) }
+    const base = { account: account, blockNumber: blockNumber, network: network, unwrappedBalance: new BigNumber(unwrappedBalance), wrappedBalance: new BigNumber(wrappedBalance), exchangeApproved: new BigNumber(exchangeApproved) }
     store.commit('setWeb3Base', base)
 
     await Promise.all(store.state.trackedOrders.map(hash => {
@@ -387,10 +387,8 @@ export const bind = (store) => {
     {
       const balances = await Promise.all(tokens.otherTokens.map(async t => {
         const balanceOnContract = account ? await promisify(c => web3.eth.call({from: account, to: t.address, data: encodeCall(method(ERC20, 'balanceOf'), [account])}, c)) : 0
-        const availableOnExchange = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'availableFor'), [account, t.address])}, c)) : 0
-        const lockedOnExchange = account ? await promisify(c => web3.eth.call({from: account, to: WyvernProtocol.getExchangeContractAddress(network), data: encodeCall(method(WyvernExchange, 'lockedFor'), [account, t.address])}, c)) : 0
         const approvedOnExchange = account ? await promisify(c => web3.eth.call({from: account, to: t.address, data: encodeCall(method(ERC20, 'allowance'), [account, WyvernProtocol.getExchangeContractAddress(network)])}, c)) : 0
-        return { address: t.address, balanceOnContract: new BigNumber(balanceOnContract), availableOnExchange: new BigNumber(availableOnExchange), lockedOnExchange: new BigNumber(lockedOnExchange), approvedOnExchange: new BigNumber(approvedOnExchange) }
+        return { address: t.address, balanceOnContract: new BigNumber(balanceOnContract), approvedOnExchange: new BigNumber(approvedOnExchange) }
       }))
       store.commit('setWeb3Balances', balances)
     }

@@ -78,26 +78,26 @@ export default {
     },
     tokens: function () {
       return this.$store.state.web3.tokens
-        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
+        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
         : []
     },
     token: function () {
+      console.log(this.tokens)
       return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     expiry: function () {
-      return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber())).toString())
+      return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
     },
     side: function () {
       return !this.order ? '' : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
     price: function () {
-      return this.order.currentPrice ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null
+      return this.order.currentPrice && this.token ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null
     },
     kind: function () {
       return !this.order ? '' : ({
         0: 'Fixed Price',
-        1: 'English Auction',
-        2: 'Dutch Auction'
+        1: 'Dutch Auction'
       })[this.order.saleKind]
     },
     schema: function () {

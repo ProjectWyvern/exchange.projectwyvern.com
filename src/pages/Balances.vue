@@ -23,13 +23,10 @@
   <v-card-text>
     <div>Unwrapped <span class="balance">{{ unwrappedBalance.div(Math.pow(10, 18)).toNumber() }} ETH</span></div>
     <div>Wrapped <span class="balance">{{ wrappedBalance.div(Math.pow(10, 18)).toNumber() }} ETH</span></div>
-    <div>Exchange Available <span class="balance">{{ exchangeAvailable.div(Math.pow(10, 18)).toNumber() }} ETH</span></div>
-    <div>Exchange Locked <span class="balance">{{ exchangeLocked.div(Math.pow(10, 18)).toNumber() }} ETH</span></div>
     <div>
       <v-radio-group v-model="which" :mandatory="true" row>
         <v-radio label="Wrap" value="wrap" :color="$vuetify.theme.primary"></v-radio>
         <v-radio label="Unwrap" value="unwrap" :color="$vuetify.theme.primary"></v-radio>
-        <v-radio label="Withdraw" value="withdraw" :color="$vuetify.theme.primary"></v-radio>
       </v-radio-group>
     </div>
   </v-card-text>
@@ -42,15 +39,13 @@
 </v-flex>
 <v-flex v-if="account" xs12>
 <br />
-<v-data-table v-bind:headers="headers" :items="balances" item-key="symbol" class="elevation-2" style="max-width: 1000px;">
+<v-data-table v-bind:headers="headers" :items="balances" item-key="symbol" class="elevation-2" style="max-width: 800px;">
   <template slot="items" slot-scope="props">
     <tr @click="props.expanded = !props.expanded">
       <td>{{ props.item.symbol }}</td>
       <td class="text-xs-right">{{ props.item.name }}</td>
       <td class="text-xs-right">{{ props.item.balanceOnContract }}</td>
-      <td class="text-xs-right">{{ props.item.availableOnExchange }}</td>
-      <td class="text-xs-right">{{ props.item.lockedOnExchange }}</td>
-      <td class="text-xs-right"><v-switch style="margin-left: 40px; width: 30px; margin-right: -15px;" :color="$vuetify.theme.primary" :value="props.item.enabled"></v-switch></td>
+      <td class="text-xs-right"><v-switch style="margin-left: 70px; width: 30px; margin-right: -45px;" :color="$vuetify.theme.primary" v-model="props.item.enabled" @click.stop="toggle(props.item)"></v-switch></td>
     </tr>
   </template>
   <template slot="expand" slot-scope="props">
@@ -73,7 +68,7 @@ import BigNumber from 'bignumber.js'
 import { encodeCall } from 'wyvern-schemas'
 import { WyvernProtocol } from 'wyvern-js'
 
-import { method, CanonicalWETH, WyvernExchange } from '../abis/index.js'
+import { method, CanonicalWETH } from '../abis/index.js'
 
 export default {
   metaInfo: {
@@ -87,18 +82,19 @@ export default {
         {text: 'Symbol', value: 'symbol', align: 'left'},
         {text: 'Name', value: 'name'},
         {text: 'Token Balance', value: 'balanceOnContract'},
-        {text: 'Exchange Available', value: 'availableOnExchange'},
-        {text: 'Exchange Locked', value: 'lockedOnExchange'},
         {text: 'Enabled', value: 'enabled'}
       ]
     }
   },
   methods: {
+    toggle: function (token) {
+      if (token.enabled) this.unapprove(token)
+      else this.approve(token)
+    },
     action: function () {
       switch (this.which) {
         case 'wrap': return this.wrap()
         case 'unwrap': return this.unwrap()
-        case 'withdraw': return this.withdraw()
       }
     },
     wrap: function () {
@@ -111,19 +107,14 @@ export default {
       const calldata = encodeCall(method(CanonicalWETH, 'withdraw'), [amount])
       this.$store.dispatch('rawSend', { target: this.tokens.canonicalWrappedEther.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     },
-    withdraw: function () {
-      const amount = WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), 18)
-      const calldata = encodeCall(method(WyvernExchange, 'withdraw'), [this.tokens.canonicalWrappedEther.address, amount.toString(), this.$store.state.web3.base.account])
-      this.$store.dispatch('rawSend', { target: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network), data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
-    },
-    approve: function () {
+    approve: function (token) {
       const amount = WyvernProtocol.MAX_UINT_256.toString()
       const calldata = encodeCall(method(CanonicalWETH, 'approve'), [WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network), amount])
-      this.$store.dispatch('rawSend', { target: this.tokens.canonicalWrappedEther.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
+      this.$store.dispatch('rawSend', { target: token.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     },
-    unapprove: function () {
+    unapprove: function (token) {
       const calldata = encodeCall(method(CanonicalWETH, 'approve'), [WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network), '0'])
-      this.$store.dispatch('rawSend', { target: this.tokens.canonicalWrappedEther.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
+      this.$store.dispatch('rawSend', { target: token.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     }
   },
   computed: {
@@ -131,9 +122,9 @@ export default {
       get: function () { return this.$store.state.web3.base.exchangeApproved.equals(WyvernProtocol.MAX_UINT_256) },
       set: function (v) {
         if (v) {
-          this.approve()
+          this.approve(this.tokens.canonicalWrappedEther)
         } else {
-          this.unapprove()
+          this.unapprove(this.tokens.canonicalWrappedEther)
         }
       }
     },
@@ -144,11 +135,10 @@ export default {
       return !this.$store.state.web3.balances ? [] : this.$store.state.web3.balances.map(b => {
         const token = this.$store.state.web3.tokens.otherTokens.filter(t => t.address === b.address)[0]
         return {
+          address: token.address,
           symbol: token.symbol,
           name: token.name,
           balanceOnContract: WyvernProtocol.toUnitAmount(b.balanceOnContract, token.decimals).toNumber(),
-          availableOnExchange: WyvernProtocol.toUnitAmount(b.availableOnExchange, token.decimals).toNumber(),
-          lockedOnExchange: WyvernProtocol.toUnitAmount(b.lockedOnExchange, token.decimals).toNumber(),
           enabled: b.approvedOnExchange.equals(WyvernProtocol.MAX_UINT_256)
         }
       })

@@ -82,8 +82,7 @@
       <v-select prepend-icon="compare_arrows" style="max-width: 400px;" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-value="value" item-text="text"></v-select>
       <v-select prepend-icon="account_balance_wallet" style="max-width: 400px;" v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address"></v-select>
       <v-text-field prepend-icon="payment" style="max-width: 400px;" v-model="amount" :label="saleKind === 0 ? 'Price (tokens)': 'Starting price (tokens)'"></v-text-field>
-      <v-text-field v-if="saleKind === 1" prepend-icon="publish" style="max-width: 400px;" v-model="minimumBidIncrement" label="Minimum bid increment (tokens)"></v-text-field>
-      <v-text-field v-if="saleKind === 2" prepend-icon="publish" style="max-width: 400px;" v-model="endingPrice" label="Ending price (tokens)"></v-text-field>
+      <v-text-field v-if="saleKind === 1" prepend-icon="publish" style="max-width: 400px;" v-model="endingPrice" label="Ending price (tokens)"></v-text-field>
       <v-menu style="max-width: 400px;" lazy :close-on-content-click="false" v-model="dateMenu" transition="scale-transition" offset-y full-width :nudge-right="40" max-width="290px" min-width="290px">
         <v-text-field slot="activator" label="Order expiration date (default never)" v-model="expirationDate" prepend-icon="event" readonly></v-text-field>
         <v-date-picker v-model="expirationDate" no-title scrollable actions>
@@ -144,8 +143,7 @@ export default {
       saleKind: 0,
       saleKinds: [
         {text: 'Fixed Price', value: 0},
-        {text: 'English Auction', value: 1},
-        {text: 'Dutch Auction', value: 2}
+        {text: 'Dutch Auction', value: 1}
       ],
       token: null,
       amount: null,
@@ -189,11 +187,11 @@ export default {
       if (this.expirationTime !== null) {
         dateStr += ' ' + this.expirationTime
       }
-      const offset = (new Date()).getTimezoneOffset()
-      return Date.parse(dateStr) + offset
+      const offset = (new Date()).getTimezoneOffset() * 60
+      return (Date.parse(dateStr) / 1000) + offset
     },
     extra: function () {
-      return this.saleKind === 0 ? 0 : (this.saleKind === 2 ? Math.abs(this.amount - this.endingPrice) : this.minimumBidIncrement)
+      return this.saleKind === 0 ? 0 : Math.abs(this.amount - this.endingPrice)
     },
     order: function () {
       try {

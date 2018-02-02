@@ -31,7 +31,7 @@ export default {
     },
     tokens: function () {
       return this.$store.state.web3.tokens
-        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther)
+        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
         : []
     },
     expiry: function () {
@@ -41,13 +41,12 @@ export default {
       return this.order.side === 0 ? 'For Purchase' : 'For Sale'
     },
     price: function () {
-      return parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals))
+      return this.token ? parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals)) : 0
     },
     kind: function () {
       return ({
         0: 'Fixed Price',
-        1: 'English Auction',
-        2: 'Dutch Auction'
+        1: 'Dutch Auction'
       })[this.order.saleKind]
     }
   }
