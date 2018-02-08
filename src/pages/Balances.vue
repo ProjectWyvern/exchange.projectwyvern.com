@@ -41,20 +41,12 @@
 <br />
 <v-data-table v-bind:headers="headers" :items="balances" item-key="symbol" class="elevation-2" style="max-width: 800px;">
   <template slot="items" slot-scope="props">
-    <tr @click="props.expanded = !props.expanded">
+    <tr>
       <td>{{ props.item.symbol }}</td>
       <td class="text-xs-right">{{ props.item.name }}</td>
       <td class="text-xs-right">{{ props.item.balanceOnContract }}</td>
       <td class="text-xs-right"><v-switch style="margin-left: 70px; width: 30px; margin-right: -45px;" :color="$vuetify.theme.primary" v-model="props.item.enabled" @click.stop="toggle(props.item)"></v-switch></td>
     </tr>
-  </template>
-  <template slot="expand" slot-scope="props">
-    <v-card flat>
-      <v-card-text style="padding: 0; padding-left: 2em; padding-top: 1em; height: 80px;">
-        <v-text-field hide-details label="Amount" style="height: 50px; max-width: 180px;"></v-text-field>
-        <v-btn flat style="position: relative; left: 200px; bottom: 40px;">Withdraw</v-btn>
-      </v-card-text>
-    </v-card>
   </template>
 </v-data-table>
 </v-flex>
@@ -119,7 +111,7 @@ export default {
   },
   computed: {
     enabled: {
-      get: function () { return this.$store.state.web3.base.exchangeApproved.equals(WyvernProtocol.MAX_UINT_256) },
+      get: function () { return this.$store.state.web3.base.exchangeApproved.gt(0) },
       set: function (v) {
         if (v) {
           this.approve(this.tokens.canonicalWrappedEther)
@@ -139,7 +131,7 @@ export default {
           symbol: token.symbol,
           name: token.name,
           balanceOnContract: WyvernProtocol.toUnitAmount(b.balanceOnContract, token.decimals).toNumber(),
-          enabled: b.approvedOnExchange.equals(WyvernProtocol.MAX_UINT_256)
+          enabled: b.approvedOnExchange.gt(0)
         }
       })
     },

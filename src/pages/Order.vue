@@ -18,7 +18,7 @@ Order {{ this.$route.params.hash }}
 <div class="side">{{ side }}</div>
 <div class="expiry">{{ expiry }}</div>
 <div class="kind">{{ kind }}</div>
-<div v-if="price" class="price">{{ price }} {{ token.symbol }}</div>
+<div v-if="price !== null" class="price">{{ price }} {{ token.symbol }}</div>
 </div>
 </div>
 </v-flex>

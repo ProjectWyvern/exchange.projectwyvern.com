@@ -7,7 +7,7 @@
         <v-subheader v-else-if="l.section" style="font-size: 1.0em; text-align: center;"><span style="margin: 0 auto;">{{ l.section }}</span></v-subheader>
         <v-divider v-else-if="l.divider" />
         <router-link :to="l.path" v-else-if="!l.divider">
-          <v-list-tile :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? ($store.state.settings.nightMode? 'active-night' : 'active'): 'inactive'">
+          <v-list-tile style="opacity: 0.85;" :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? ($store.state.settings.nightMode? 'active-night' : 'active'): 'inactive'">
             <v-list-tile-avatar>
               <v-icon :style="iconStyle">{{ l.icon }}</v-icon>
             </v-list-tile-avatar>

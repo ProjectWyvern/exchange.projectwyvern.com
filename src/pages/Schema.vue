@@ -11,6 +11,10 @@
 <script>
 import Schema from '../components/Schema'
 
+// Display transfer function & event.
+// Link to asset list (directory).
+// Link to "buy an asset like this" / "sell an asset like this".
+
 export default {
   name: 'schemaPage',
   components: { Schema },

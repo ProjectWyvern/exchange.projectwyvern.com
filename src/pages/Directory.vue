@@ -14,6 +14,8 @@ import Event from '../components/Event'
 import { waitForWeb3, getRecentEvents } from '../aux'
 
 // Need to build event query from search fields.
+// Display as grid, sorted by recency, not as event list.
+// Infinite scroll going back / forward in time.
 // Goal: easy event search across fields, across particular assets, and across schemas.
 
 export default {

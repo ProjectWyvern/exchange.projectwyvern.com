@@ -1,6 +1,6 @@
 <template>
 <v-container>
-<div>Displaying asset schemas for currently configured network: {{ network }}. {{ schemas.length }} schemas loaded.</div>
+<div>Displaying asset schemas for currently configured network: {{ network }}. {{ schemas.length }} schema(s) matched query.</div>
 <br />
 <v-text-field style="max-width: 400px; display: inline-block;" v-model="filter" label="Filter by name" name="filter"></v-text-field>
 <v-layout row wrap>

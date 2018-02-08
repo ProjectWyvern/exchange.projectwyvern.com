@@ -7,12 +7,22 @@
   <v-card-media :src="metadata.thumbnail" height="150px">
   </v-card-media>
   <v-card-title primary-title>
-    <div style="width: 100%;">
+    <div style="width: 80%;">
       <div style="width: 100%;">
         <h3 style="display: inline-block;">{{ metadata.title }}</h3>
       </div>
       <div style="font-size: 0.9em; max-width: 100%; word-wrap: break-word;">{{ metadata.description }}</div><br />
     </div>
+    <v-menu bottom left v-if="menu">
+      <v-btn icon slot="activator" @click.prevent>
+        <v-icon>more_vert</v-icon>
+      </v-btn>
+      <v-list>
+        <v-list-tile v-for="item in menu.items" :key="item.title" @click="item.func()">
+          <v-list-tile-title>{{ item.title }}</v-list-tile-title>
+        </v-list-tile>
+      </v-list>
+    </v-menu>
   </v-card-title>
 </v-card>
 </template>
@@ -20,7 +30,7 @@
 <script>
 export default {
   name: 'asset',
-  props: ['metadata', 'schema', 'hover'],
+  props: ['metadata', 'schema', 'hover', 'menu'],
   methods: {
     navigate: function (url) {
       window.open(url, '_blank')
