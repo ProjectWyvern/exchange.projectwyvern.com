@@ -20,7 +20,7 @@
       </v-card-title>
       <v-card-actions>
         <v-btn class="nbtn" flat @click.native="viewTx(n.txHash)">View TX</v-btn>
-        <v-btn class="nbtn" flat :disabled="n.finalized" @click.native="adjustTx(n.txHash)">Adjust TX</v-btn>
+        <v-btn class="nbtn" flat :disabled="n.finalized || true" @click.native="adjustTx(n.txHash)">Adjust TX</v-btn>
         <v-btn class="nbtn" flat @click.native="clear(index)">Clear</v-btn>
       </v-card-actions>
     </v-card>

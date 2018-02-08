@@ -1,18 +1,18 @@
 <template>
 <v-app id="app" :dark="nightMode">
-  <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft" width="180">
+  <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft" width="200">
     <v-list dense>
       <template v-for="(l, i) in links">
         <v-subheader v-if="l.banner" class="banner">{{ l.banner }}</v-subheader>
-        <v-subheader v-else-if="l.section" style="font-variant: small-caps; font-size: 1.0em; text-align: center;"><span style="margin: 0 auto;">{{ l.section }}</span></v-subheader>
+        <v-subheader v-else-if="l.section" style="font-size: 1.0em; text-align: center;"><span style="margin: 0 auto;">{{ l.section }}</span></v-subheader>
         <v-divider v-else-if="l.divider" />
         <router-link :to="l.path" v-else-if="!l.divider">
           <v-list-tile :class="(l.path === '/' ? l.path === activePath : activePath.indexOf(l.path) === 0) ? ($store.state.settings.nightMode? 'active-night' : 'active'): 'inactive'">
             <v-list-tile-avatar>
-              <v-icon>{{ l.icon }}</v-icon>
+              <v-icon :style="iconStyle">{{ l.icon }}</v-icon>
             </v-list-tile-avatar>
             <v-list-tile-content>
-              <v-list-tile-title style="font-variant: small-caps; font-size: 1.2em;">
+              <v-list-tile-title style="font-size: 1.2em;">
               {{ l.name }}
               </v-list-tile-title>
             </v-list-tile-content>
@@ -96,6 +96,11 @@ export default {
     nightMode: function () {
       return this.$store.state.settings.nightMode
     },
+    iconStyle: function () {
+      return {
+        color: this.nightMode ? '#fff' : '#000'
+      }
+    },
     activePath: function () {
       return this.$route.path
     },
@@ -148,8 +153,8 @@ export default {
         { name: 'Post', icon: 'create', path: '/orders/post' },
         { divider: true },
         { section: 'Assets' },
-        { name: 'Directory', icon: 'view_list', path: '/assets/directory' },
-        { name: 'Schemas', icon: 'developer_board', path: '/assets/schemas' },
+        { name: 'Directory', icon: 'view_list', path: '/directory' },
+        { name: 'Schemas', icon: 'developer_board', path: '/schemas' },
         { divider: true },
         { section: 'Account' },
         { name: 'Assets', icon: 'domain', path: '/account/assets' },
@@ -169,6 +174,22 @@ export default {
 <style>
 a {
   text-decoration: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; 
 }
 </style>
 
@@ -227,7 +248,6 @@ a:hover {
 }
 
 #app {
-  font-family: "Raleway", sans-serif !important;
 }
 
 .footer {
@@ -236,7 +256,6 @@ a:hover {
 
 .banner {
   display: block;
-  font-variant: small-caps;
   padding-top: 3px;
   height: 30px;
   text-align: center;

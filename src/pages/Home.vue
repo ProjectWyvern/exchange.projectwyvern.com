@@ -1,15 +1,16 @@
 <template>
-<v-container>
+<v-container class="home">
 <v-layout>
 <v-flex xs12>
 <p>
 <v-alert color="info" icon="priority_high" value="true" outline>
-This is a prerelease alpha version, running on Ethereum's Rinkeby testnet. Expect UI/UX bugs. Please report issues and send feedback <a href="https://goo.gl/forms/WyD2ZuhPW6yMXfrq1" target="_blank">using this form</a>.
+This is a prerelease alpha version, running on Ethereum's Rinkeby testnet. Expect UI/UX bugs. Please report issues and send feedback <a href="https://discord.gg/dZZdybs" target="_blank">on Discord</a>.
 </v-alert>
 </p><br />
 <p>
 <div class="heading">What is the Wyvern Exchange?</div><br />
-The Wyvern Exchange is a decentralized digital asset exchange running on the Ethereum blockchain. Using the Wyvern Exchange, you can buy or sell anything you can represent on Ethereum, from virtual kittens to smart contracts, to or from anyone in the world.
+The Wyvern Exchange is a decentralized digital asset exchange running on the Ethereum blockchain.<br />
+Using the Wyvern Exchange, you can buy or sell anything you can represent on Ethereum, from virtual kittens to smart contracts, to or from anyone in the world.
 </p><br />
 <p>
 <div class="heading">Why use the Wyvern Exchange?</div><br />
@@ -24,8 +25,8 @@ The Wyvern Exchange streamlines UI/UX for common asset types - if you'd like you
 </p>
 <p>
 <div class="small-heading">Buy or sell the way you want.</div><br />
-Choose your method of sale - the Wyvern Exchange supports fixed-price sales, English auctions, and Dutch auctions natively, and the protocol is easily extensible.<br />
-The Exchange is a two-sided marketplace. Both buy-side and sell-side orders are supported: you can sell your digital cat or place an order to buy any digital cat with blue eyes and a red tail.
+Choose your method of sale - the Wyvern Exchange supports fixed-price sales and Dutch auctions right now, and later protocol versions will add more options.<br />
+The Exchange is a two-sided marketplace. Both buy-side and sell-side orders are supported: you can sell your particular digital cat or place an order to buy any digital cat with blue eyes and a red tail.
 </p>
 <p>
 <div class="small-heading">No rent-extracting intermediaries.</div><br />
@@ -35,7 +36,7 @@ Later on, a fraction of a percent of each sale will be charged to pay for server
 <br />
 <p>
 <div class="heading">How do I get started?</div><br />
-Navigate using the left sidebar to browse existing orders (items for sale), place an order of your own, or browse through the digital assets you already possess.
+Navigate using the left sidebar to browse existing orders (assets for sale or purchase), place an order of your own, or browse through the digital assets you already possess.
 </p>
 </v-flex xs12>
 </v-layout>
@@ -53,6 +54,10 @@ export default {
 </script>
 
 <style scoped>
+.home {
+  font-size: 1.2em;
+}
+
 .heading {
   font-variant: small-caps;
   font-size: 2em;

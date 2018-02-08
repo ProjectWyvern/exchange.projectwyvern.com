@@ -4,6 +4,7 @@ import PostOrder from './pages/PostOrder'
 import Order from './pages/Order'
 import Directory from './pages/Directory'
 import Schemas from './pages/Schemas'
+import Schema from './pages/Schema'
 import Asset from './pages/Asset'
 import Assets from './pages/Assets'
 import Balances from './pages/Balances'
@@ -18,9 +19,10 @@ export default [
   { path: '/orders/find', component: FindOrder },
   { path: '/orders/post', component: PostOrder },
   { path: '/orders/:hash', component: Order },
-  { path: '/assets/directory', component: Directory },
-  { path: '/assets/schemas', component: Schemas },
-  { path: '/assets/:spec', component: Asset },
+  { path: '/directory', component: Directory },
+  { path: '/directory/:spec', component: Asset },
+  { path: '/schemas', component: Schemas },
+  { path: '/schemas/:schema', component: Schema },
   { path: '/account/assets', component: Assets },
   { path: '/account/balances', component: Balances },
   { path: '/account/history', component: History },

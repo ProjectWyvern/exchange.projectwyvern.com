@@ -19,32 +19,13 @@
       Select the kind of asset you want to buy or sell from the available categories, or select the "Custom" category to specify all fields manually.
       </div>
       <div v-if="schema" style="margin-bottom: 1em;">
-        <v-card raised style="padding: 5px; margin: 5px; width: 300px; height: 350px;">
-          <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
-          <v-card-title>
-            <div>
-              <h3>{{ schema.name }}</h3>
-              <div>{{ schema.description }}</div>
-            </div>
-          </v-card-title>
-          <v-card-actions>
-            <v-btn flat target="_blank" :href="schema.website">Website</v-btn>
-          </v-card-actions>
-        </v-card>
+        <schema expand="true" @click.native="category = schema.index" :schema="schema"></schema>
       </div>
       <div v-if="!schema" class="category">
         <v-text-field style="max-width: 400px;" v-model="catfilter" label="Filter by name" name="catfilter"></v-text-field>
         <v-layout row wrap class="category-inner">
           <v-flex xs12 md6 lg4 xl3 v-for="(schema, index) in schemas" :key="index">
-            <v-card raised hover style="padding: 5px; margin: 5px; width: 300px; height: 300px;" @click.native="category = schema.index">
-              <v-card-media height="200px" :src="schema.thumbnail"></v-card-media>
-              <v-card-title>
-                <div>
-                  <h3>{{ schema.name }}</h3>
-                  <div>{{ schema.description }}</div>
-                </div>
-              </v-card-title>
-            </v-card>
+            <schema hover @click.native="category = schema.index" :schema="schema"></schema>
           </v-flex>
         </v-layout>
       </div>
@@ -54,8 +35,8 @@
     <v-stepper-content step="2">
       <div class="header">Select the side of the order you wish to place.</div>
       <v-radio-group v-model="side" :mandatory="true">
-        <v-radio color="black" label="Sell-side" value="sell"></v-radio>
-        <v-radio color="black" label="Buy-side" value="buy"></v-radio>
+        <v-radio :color="$vuetify.theme.primary" label="Sell-side" value="sell"></v-radio>
+        <v-radio :color="$vuetify.theme.primary" label="Buy-side" value="buy"></v-radio>
       </v-radio-group>
       <div class="explainer">
       Sell-side orders allow you to sell a specific asset you already own. Buy-side orders allow you to buy a particular asset, or to buy any asset with certain characteristics.
@@ -122,12 +103,13 @@ import BigNumber from 'bignumber.js'
 import { encodeSell, encodeBuy } from 'wyvern-schemas'
 
 import Order from '../components/Order'
+import Schema from '../components/Schema'
 import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
 
 const clone = (obj) => JSON.parse(JSON.stringify(obj))
 
 export default {
-  components: { Order },
+  components: { Order, Schema },
   metaInfo: {
     title: 'Post Order'
   },
@@ -278,9 +260,9 @@ export default {
   margin-bottom: 1em;
 }
 
-.category {
+.category-inner {
   margin-bottom: 2em;
-  max-height: 400px;
+  max-height: 800px;
   overflow: auto;
 }
 </style>

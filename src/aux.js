@@ -319,6 +319,40 @@ export const trackOrder = async (store, hash) => {
   store.commit('setOrderData', { hash, key: 'currentPrice', value: currentPrice })
 }
 
+var notified = false
+const notify = () => {
+  notified = true
+}
+
+export const waitForWeb3 = () => promisify(c => {
+  const check = () => {
+    if (notified) c()
+    else {
+      setTimeout(check, 100)
+    }
+  }
+  check()
+})
+
+export const getRecentEvents = async (schemas, fromBlockNumber, toBlockNumber) => {
+  const recentAssetEventsBySchema = await Promise.all(schemas.map(async s => {
+    const transferEvent = s.events.transfer
+    if (transferEvent) {
+      const contract = web3.eth.contract([transferEvent]).at(transferEvent.target)
+      const events = await promisify(c => contract[transferEvent.name]({}, {fromBlock: fromBlockNumber, toBlock: toBlockNumber}).get(c))
+      return events.map(e => ({
+        schema: s,
+        asset: transferEvent.nftFromInputs(e.args),
+        event: e
+      }))
+    } else {
+      return []
+    }
+  }))
+  const recentAssetEvents = [].concat(...recentAssetEventsBySchema).reverse()
+  return recentAssetEvents
+}
+
 export var poll
 
 export const bind = (store) => {
@@ -458,6 +492,7 @@ export const bind = (store) => {
 
     const end = Date.now() / 1000
     const diff = end - start
+    notify()
     logger.debug({extra: {latency: latency, diff: diff}}, 'Reloaded web3 state')
   }
   poll()
