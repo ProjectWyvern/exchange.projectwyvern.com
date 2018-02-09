@@ -111,11 +111,22 @@ export default {
     },
     makeMenu: function (asset) {
       const transfer = () => { this.transferAsset = asset; this.transferDialog = true }
+      var items = [
+        asset.proxy ? {title: 'Withdraw', func: () => this.withdraw(asset)} : {title: 'Deposit', func: () => this.deposit(asset)},
+        {title: 'Transfer', func: transfer}
+      ]
+      if (asset.proxy && asset.schema.nftToFields) {
+        items.unshift({
+          title: 'Sell',
+          func: () => {
+            const category = this.schemas.filter(s => s.name === asset.schema.name)[0].index
+            var query = {category: category, values: encodeURIComponent(JSON.stringify(asset.schema.nftToFields(asset.asset))), side: 'sell', step: 4}
+            this.$router.push({path: '/orders/post', query: query})
+          }
+        })
+      }
       return {
-        items: [
-          asset.proxy ? {title: 'Withdraw', func: () => this.withdraw(asset)} : {title: 'Deposit', func: () => this.deposit(asset)},
-          {title: 'Transfer', func: transfer}
-        ]
+        items: items
       }
     }
   },
@@ -146,6 +157,12 @@ export default {
     },
     assets: function () {
       return this.$store.state.web3.assets || []
+    },
+    schemas: function () {
+      return (this.$store.state.web3.schemas || []).map((s, i) => {
+        s.index = i
+        return s
+      })
     }
   }
 }

@@ -50,11 +50,11 @@
       </div><br />
       <div>
         <div v-for="(field, index) in fields" :key="index">
-          <v-text-field @input="unifyValues()" v-model="values[field.name]" style="max-width: 600px;" :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" :readonly="field.readOnly"></v-text-field>
+          <v-text-field @input="unifyValues(); valueChange()" v-model="values[field.name]" style="max-width: 600px;" :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" :readonly="field.readOnly"></v-text-field>
         </div>
       </div>
       <v-btn color="primary" @click.native="step = 4">Continue</v-btn>
-      <v-btn @click.native="step = 2" flat>Back</v-btn>
+      <v-btn @click.native="step = 2; values = {}; valueChange()" flat>Back</v-btn>
     </v-stepper-content>
     <v-stepper-content step="4">
       <div class="explainer">
@@ -108,6 +108,14 @@ import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
 
 const clone = (obj) => JSON.parse(JSON.stringify(obj))
 
+const bind = function (name) {
+  return function (n, o) {
+    const query = clone(this.$route.query)
+    if (n !== null) { query[name] = n } else { delete query[name] }
+    this.$router.push({query: query})
+  }
+}
+
 export default {
   components: { Order, Schema },
   metaInfo: {
@@ -115,14 +123,14 @@ export default {
   },
   data: function () {
     const query = this.$route.query
-    const step = 1
+    const step = query.step ? parseInt(query.step) : 1
     return {
       catfilter: '',
       step: step,
       side: query.side ? query.side : null,
-      category: query.category ? query.category : null,
-      values: {},
-      saleKind: 0,
+      category: query.category !== undefined ? query.category : null,
+      values: query.values ? JSON.parse(decodeURIComponent(query.values)) : {},
+      saleKind: query.saleKind ? parseInt(query.saleKind) : 0,
       saleKinds: [
         {text: 'Fixed Price', value: 0},
         {text: 'Dutch Auction', value: 1}
@@ -215,18 +223,23 @@ export default {
     }
   },
   watch: {
-    category: function (n, o) {
-      const query = clone(this.$route.query)
-      if (n !== null) { query.category = n } else { delete query.category }
-      this.$router.push({query: query})
-    },
-    side: function (n, o) {
-      const query = clone(this.$route.query)
-      if (n !== null) { query.side = n } else { delete query.side }
-      this.$router.push({query: query})
+    category: bind('category'),
+    side: bind('side'),
+    step: bind('step'),
+    values: function (n, o) {
+      console.log('values', n, o)
     }
   },
   methods: {
+    valueChange: function () {
+      const query = clone(this.$route.query)
+      if (Object.keys(this.values).length > 0) {
+        query.values = encodeURIComponent(JSON.stringify(this.values))
+      } else {
+        delete query.values
+      }
+      this.$router.push({query: query})
+    },
     unifyValues: function () {
       if (this.schema.unifyFields) {
         this.values = this.schema.unifyFields(this.values)

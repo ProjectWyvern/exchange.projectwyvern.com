@@ -25,11 +25,13 @@
       <v-switch v-model="nightMode" label="Night Mode" :color="color" class="setting setting-switch"></v-switch>
     </v-list-tile-content>
   </v-list-tile>
+  <!--
   <v-list-tile>
     <v-list-tile-content>
       <v-switch v-model="advancedMode" label="Advanced Mode" :color="color" class="setting setting-switch"></v-switch>
     </v-list-tile-content>
   </v-list-tile>
+  -->
   <v-list-tile style="height: 40px;">
     <v-list-tile-content style="height: 1px;">
       <v-divider dark></v-divider>
