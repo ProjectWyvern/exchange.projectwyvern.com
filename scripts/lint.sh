@@ -2,4 +2,4 @@
 
 set -e
 
-eslint --ext js,vue src/**/*.vue src/*.vue --fix
+yarn run eslint --ext js,vue src/**/*.vue src/*.vue src/*.js --fix
