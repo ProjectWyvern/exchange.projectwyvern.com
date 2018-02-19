@@ -114,7 +114,7 @@ const wrapSend = (contract, method) => {
   }
 }
 
-const postOrder = async ({ state, commit }, { order, callback }) => {
+const postOrder = async ({ state, commit }, { order, callback, onError }) => {
   const hash = await protocolInstance.wyvernExchange.hashOrder_.callAsync(
     [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
     [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
@@ -124,7 +124,7 @@ const postOrder = async ({ state, commit }, { order, callback }) => {
     order.calldata,
     order.replacementPattern,
     order.staticExtradata)
-  if (hash !== order.hash) throw new Error('Hashes did not match: ', hash + ', ' + order.hash)
+  if (hash !== order.hash) return onError('Hashes did not match: ', hash + ', ' + order.hash + '!')
   const valid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
     [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
     [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
@@ -137,8 +137,12 @@ const postOrder = async ({ state, commit }, { order, callback }) => {
     parseInt(order.v),
     order.r || '0x',
     order.s || '0x')
-  if (!valid) throw new Error('Order did not pass validation!')
-  await wyvernExchange.postOrder(order)
+  if (!valid) return onError('Order did not pass validation!')
+  try {
+    await wyvernExchange.postOrder(order)
+  } catch (err) {
+    return onError('Orderbook rejected order!')
+  }
   callback()
 }
 

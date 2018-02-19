@@ -43,15 +43,7 @@
 <script>
 import Order from '../components/Order'
 
-const clone = (obj) => JSON.parse(JSON.stringify(obj))
-
-const bind = function (name) {
-  return function (n, o) {
-    const query = clone(this.$route.query)
-    if (n !== null) { query[name] = n } else { delete query[name] }
-    this.$router.push({query: query})
-  }
-}
+import { bind } from '../misc'
 
 export default {
   name: 'find',

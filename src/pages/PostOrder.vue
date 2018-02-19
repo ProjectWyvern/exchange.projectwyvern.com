@@ -1,5 +1,28 @@
 <template>
 <v-container>
+<v-dialog v-model="postDialog" max-width="500px">
+  <v-card>
+    <v-card-title style="font-variant: small-caps; font-size: 1.4em;">
+      Post Order
+    </v-card-title>
+    <v-card-text v-if="posted">
+      <v-icon style="color: green; margin-left: 10px; margin-right: 10px;">
+      check_circle
+      </v-icon>
+      Order posted, redirecting.
+    </v-card-text>
+    <v-card-text v-else-if="postFailed">
+      Error: {{ postError }}<br />
+      If you're trying to sell an asset, ensure you own the asset and that you've deposited it to your Exchange account.
+    </v-card-text>
+    <v-card-text v-else-if="posting">
+      <v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-bind:indeterminate="true"></v-progress-circular> 
+    </v-card-text>
+    <v-card-actions>
+      <v-btn color="primary" flat @click.stop="postDialog = false">Close</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
 <v-progress-linear v-if="!ready" v-bind:indeterminate="true"></v-progress-linear>
 <v-stepper v-if="ready" v-model="step">
   <v-stepper-header>
@@ -129,6 +152,11 @@ export default {
     const query = this.$route.query
     const step = query.step ? parseInt(query.step) : 1
     return {
+      postDialog: false,
+      postFailed: false,
+      postError: null,
+      posting: false,
+      posted: false,
       catfilter: '',
       step: step,
       side: query.side ? query.side : null,
@@ -185,36 +213,34 @@ export default {
       return this.saleKind === 0 ? 0 : Math.abs(this.amount - this.endingPrice)
     },
     order: function () {
-      try {
-        const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
-        const token = this.tokens.filter(t => t.address === this.token)[0]
-        const asset = this.schema.assetFromFields(this.values)
-        const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, asset, account) : encodeSell(this.schema, asset)
-        const order = {
-          exchange: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network),
-          maker: account,
-          taker: WyvernProtocol.NULL_ADDRESS,
-          makerFee: new BigNumber(0),
-          takerFee: new BigNumber(0),
-          feeRecipient: feeRecipient,
-          side: (this.side === 'buy' ? 0 : 1),
-          saleKind: this.saleKind,
-          target: target,
-          howToCall: 0,
-          calldata: calldata,
-          replacementPattern: replacementPattern,
-          staticTarget: WyvernProtocol.NULL_ADDRESS,
-          staticExtradata: '0x',
-          paymentToken: this.token,
-          basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
-          extra: WyvernProtocol.toBaseUnitAmount(new BigNumber(this.extra), token.decimals),
-          listingTime: new BigNumber(Math.round(Date.now() / 1000)),
-          expirationTime: new BigNumber(this.expiration),
-          salt: WyvernProtocol.generatePseudoRandomSalt(),
-          metadata: this.metadata
-        }
-        return order
-      } catch (e) { console.log(e) }
+      const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
+      const token = this.tokens.filter(t => t.address === this.token)[0]
+      const asset = this.schema.assetFromFields(this.values)
+      const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, asset, account) : encodeSell(this.schema, asset)
+      const order = {
+        exchange: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network),
+        maker: account,
+        taker: WyvernProtocol.NULL_ADDRESS,
+        makerFee: new BigNumber(0),
+        takerFee: new BigNumber(0),
+        feeRecipient: feeRecipient,
+        side: (this.side === 'buy' ? 0 : 1),
+        saleKind: this.saleKind,
+        target: target,
+        howToCall: 0,
+        calldata: calldata,
+        replacementPattern: replacementPattern,
+        staticTarget: WyvernProtocol.NULL_ADDRESS,
+        staticExtradata: '0x',
+        paymentToken: this.token,
+        basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
+        extra: WyvernProtocol.toBaseUnitAmount(new BigNumber(this.extra), token.decimals),
+        listingTime: new BigNumber(Math.round(Date.now() / 1000)),
+        expirationTime: new BigNumber(this.expiration),
+        salt: WyvernProtocol.generatePseudoRandomSalt(),
+        metadata: this.metadata
+      }
+      return order
     },
     metadata: function () {
       return {
@@ -246,16 +272,31 @@ export default {
       }
     },
     post: async function () {
-      console.log(this.order)
+      this.postDialog = true
+      this.posting = true
+      this.posted = false
+      this.postFailed = false
       var order = orderToJSON(this.order)
-      const signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
+      var signature
+      try {
+        signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
+      } catch (err) {
+        this.postFailed = true
+        this.postError = 'Signature rejected!'
+        return
+      }
       order.v = signature.v
       order.r = signature.r
       order.s = signature.s
       const callback = () => {
-        this.$router.push('/orders/' + order.hash)
+        this.posted = true
+        setTimeout(() => this.$router.push('/orders/' + order.hash), 500)
       }
-      this.$store.dispatch('postOrder', { order: order, callback: callback, onError: console.log })
+      const onError = (err) => {
+        this.postFailed = true
+        this.postError = err
+      }
+      this.$store.dispatch('postOrder', { order: order, callback: callback, onError: onError })
     }
   }
 }

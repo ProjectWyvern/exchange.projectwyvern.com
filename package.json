@@ -29,7 +29,7 @@
     "vuetify": "^1.0.1",
     "vuex": "^3.0.1",
     "vuex-persist": "^1.0.3",
-    "wyvern-exchange": "0.1.4",
+    "wyvern-exchange": "0.1.5",
     "wyvern-js": "0.1.1",
     "wyvern-schemas": "0.1.5"
   },

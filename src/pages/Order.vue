@@ -1,8 +1,33 @@
 <template>
 <v-container>
+<v-dialog v-model="matchDialog" max-width="500px">
+  <v-card>
+    <v-card-title style="font-variant: small-caps; font-size: 1.4em;">
+      Matching Order
+    </v-card-title>
+    <v-card-text v-if="matched">
+      <v-icon style="color: green; margin-left: 10px; margin-right: 10px;">
+      check_circle
+      </v-icon>
+      {{ order.asset.formatted.title }} has been transferred.<br />
+      Asset pages may take a few seconds to update.
+    </v-card-text>
+    <v-card-text v-else-if="simulationFailed">
+      Transaction rejected or match simulation failed - check that you have enabled the specified token and that you have sufficient available balance.
+    </v-card-text>
+    <v-card-text v-else-if="matching">
+      <v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-if="matching && !matched" v-bind:indeterminate="true"></v-progress-circular> 
+      <div v-if="!matchTx" style="margin-top: 1em; margin-left: 1em;">You will need to approve the transaction.</div><br />
+      <v-btn v-if="matchTx" target="_blank" :href="getUrl(matchTx)" style="margin-top: 2em;">View Transaction</v-btn>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn color="primary" flat @click.stop="matchDialog = false">Close</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
 <v-layout row wrap>
-<v-flex xs12 style="line-height: 4em; text-align: center;" hidden-xs-only>
-Order {{ this.$route.params.hash }}
+<v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center;" hidden-xs-only>
+Order {{ hash }}
 </v-flex>
 <v-flex xs12 v-if="!order">
 <div style="width: 50px; margin: 0 auto; margin-top: 70px;">
@@ -10,9 +35,21 @@ Order {{ this.$route.params.hash }}
 </div>
 </v-flex>
 <v-flex xs12 v-if="order">
+<router-link :to="'/assets/' + order.asset.hash">
 <asset style="margin: 0 auto;" :schema="schema" :asset="order.asset"></asset>
+</router-link>
 </v-flex>
-<v-flex xs12 v-if="order">
+<v-flex xs12 v-if="order && order.settlement">
+<div style="text-align: center; line-height: 4em;">
+<div class="saleInfo">
+<div class="side">{{ side }}</div>
+{{ expiry }} by <router-link :to="'/accounts/' + order.settlement.maker">{{ order.settlement.maker }}</router-link> <br />to <router-link :to="'/accounts/' + order.settlement.taker">{{ order.settlement.taker }}</router-link> for
+<div v-if="price !== null" class="price">{{ price }} {{ token.symbol }}</div>
+</div>
+<v-btn target="_blank" :href="transactionUrl">View Transaction</v-btn>
+</div>
+</v-flex>
+<v-flex xs12 v-if="order && !order.settlement">
 <div style="text-align: center; line-height: 4em;">
 <div class="saleInfo">
 <div class="side">{{ side }}</div>
@@ -22,16 +59,10 @@ Order {{ this.$route.params.hash }}
 </div>
 </div>
 </v-flex>
-<v-flex xs12 v-if="order">
+<v-flex xs12 v-if="order && !order.settlement">
 <div style="margin: 0 auto; width: 100px;">
 <v-btn v-if="mine" raised @click.native="cancel()">Cancel</v-btn>
-<v-btn v-if="!matching && !matched" raised @click.native="match()">
-Match
-</v-btn>
-<v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-if="matching && !matched" v-bind:indeterminate="true"></v-progress-circular>
-<v-icon v-if="matched" style="color: green; margin-left: 30px;">
-check_circle
-</v-icon>
+<v-btn v-if="!mine" raised @click.native="match()">Match</v-btn>
 </div>
 </v-flex>
 </v-layout>
@@ -40,6 +71,7 @@ check_circle
 
 <script>
 import BigNumber from 'bignumber.js'
+import moment from 'moment'
 import { encodeBuy, encodeSell } from 'wyvern-schemas'
 
 import Asset from '../components/Asset'
@@ -54,13 +86,16 @@ export default {
     }
   },
   created: function () {
-    this.$store.dispatch('fetchOrder', { hash: this.$route.params.hash })
+    this.$store.dispatch('fetchOrder', { hash: this.hash })
   },
   destroyed: function () {
     this.$store.commit('untrackOrder', this.hash)
   },
   data: function () {
     return {
+      matchDialog: false,
+      matchTx: null,
+      simulationFailed: false,
       matching: false,
       matched: false,
       hash: this.$route.params.hash
@@ -75,12 +110,28 @@ export default {
     match: function () {
       const buy = this.order.side === 0 ? this.order : this.orderToMatch
       const sell = this.order.side === 0 ? this.orderToMatch : this.order
-      const onTxHash = () => { this.matching = true }
-      const onConfirm = () => { this.matched = true }
-      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: console.log, onTxHash: onTxHash, onConfirm: onConfirm })
+      const onTxHash = (txHash) => { this.matchTx = txHash }
+      const onConfirm = () => { this.matched = true; this.$store.dispatch('fetchOrder', { hash: this.hash }) }
+      const onError = () => { this.simulationFailed = true }
+      this.matching = true
+      this.matched = false
+      this.simulationFailed = false
+      this.matchDialog = true
+      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: onError, onTxHash: onTxHash, onConfirm: onConfirm })
+    },
+    getUrl: function (hash) {
+      const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
+        ? (this.$store.state.web3.base.network + '.') : ''
+      return 'https://' + prefix + 'etherscan.io/tx/' + hash
     }
   },
   computed: {
+    transactionUrl: function () {
+      const hash = this.order.settlement ? this.order.settlement.transactionHashIndex.slice(0, 66) : ''
+      const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
+        ? (this.$store.state.web3.base.network + '.') : ''
+      return 'https://' + prefix + 'etherscan.io/tx/' + hash
+    },
     tokens: function () {
       return this.$store.state.web3.tokens
         ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
@@ -90,13 +141,13 @@ export default {
       return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     expiry: function () {
-      return !this.order ? '' : (this.order.settlement ? '' : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
+      return !this.order ? '' : (this.order.settlement ? moment(this.order.settlement.timestamp * 1000).fromNow() : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
     },
     side: function () {
       return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
     price: function () {
-      return this.order.currentPrice && this.token ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null
+      return this.token ? (this.order.settlement ? parseFloat(WyvernProtocol.toUnitAmount(this.order.settlement.price, this.token.decimals)) : (this.order && this.order.currentPrice ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null)) : null
     },
     kind: function () {
       return !this.order ? '' : ({
@@ -153,6 +204,14 @@ export default {
   padding-right: 0.5em;
   line-height: 1.5em;
   margin: 0 auto;
+}
+
+.saleInfo a {
+  color: blue;
+}
+
+.saleInfo a:hover {
+  text-decoration: underline;
 }
 
 .side, .kind, .expiry, .price {

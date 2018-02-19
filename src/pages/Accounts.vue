@@ -1,6 +1,6 @@
 <template>
 <v-container>
-<div>Accounts</div>
+<div>Account listing with useful statistics coming soon! Individual account pages accessible at /accounts/[address].</div>
 </v-container>
 </template>
 
@@ -11,7 +11,7 @@ export default {
   name: 'accounts',
   components: { Account },
   metaInfo: {
-    title: 'Asset Schemas'
+    title: 'Accounts'
   },
   data: function () {
   },
