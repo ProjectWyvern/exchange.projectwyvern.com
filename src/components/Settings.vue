@@ -6,7 +6,7 @@
         Clear Local State
       </v-card-title>
       <v-card-text>
-      Clearing local state will reset your notifications, network configuration, application settings, and event cache.
+      Clearing local state will reset your notifications, network configuration, application settings, and asset metadata cache.
       </v-card-text>
     <v-card-actions>
       <v-btn color="primary" dark @click.stop="clearLocalState()">Clear State</v-btn>

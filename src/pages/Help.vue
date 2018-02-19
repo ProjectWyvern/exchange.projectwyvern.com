@@ -19,4 +19,8 @@ export default {
 a:hover {
   text-decoration: underline;
 }
+
+a { 
+  color: blue;
+}
 </style>

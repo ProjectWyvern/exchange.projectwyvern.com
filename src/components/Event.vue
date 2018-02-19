@@ -16,12 +16,15 @@ export default {
   props: ['schema', 'asset', 'event', 'hover'],
   methods: {
   },
+  asyncComputed: {
+    title: async function () {
+      const formatted = await this.schema.formatter(this.asset)
+      return formatted.title
+    }
+  },
   computed: {
     url: function () {
       return 'https://etherscan.io'
-    },
-    title: function () {
-      return this.schema.formatter(this.asset).title
     },
     info: function () {
       const from = this.event.args[this.schema.events.transfer.inputs.filter(i => i.kind === 'source')[0].name]

@@ -2,6 +2,11 @@ var GitRevisionPlugin = require('git-revision-webpack-plugin')
 var gitRevisionPlugin = new GitRevisionPlugin()
 var webpack = require('webpack')
 
+/*
+var PrerenderSpaPlugin = require('prerender-spa-plugin')
+var path = require('path')
+*/
+
 module.exports = (options, req) => ({
   transformModules: ['ethereumjs-util'],
   entry: './src/index.js',
@@ -19,6 +24,15 @@ module.exports = (options, req) => ({
       'COMMITHASH': JSON.stringify(gitRevisionPlugin.commithash()),
       'BRANCH': JSON.stringify(gitRevisionPlugin.branch())
     }))
+    /*
+    config.plugins.push(new PrerenderSpaPlugin(
+      path.resolve(__dirname, './dist'),
+      ['/', '/orders/find', '/orders/post', '/directory', '/schemas', '/stats', '/about', '/help'],
+      {
+        captureAfterTime: 5000
+      }
+    ))
+    */
     config.node = {fs: 'empty'}
     return config
   }

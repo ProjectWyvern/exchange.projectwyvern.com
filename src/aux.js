@@ -2,12 +2,13 @@ import Promise from 'bluebird'
 import BigNumber from 'bignumber.js'
 import Web3 from 'web3'
 
+import * as exchangeAPI from 'wyvern-exchange'
 import { WyvernProtocol } from 'wyvern-js'
 import * as WyvernSchemas from 'wyvern-schemas'
 
-import api from './api'
 import { logger } from './logging.js'
-import { method, WyvernExchange, ERC20, CanonicalWETH } from './abis/index.js'
+import { cachedAsync } from './cache.js'
+import { method, ERC20, CanonicalWETH } from './abis/index.js'
 
 const encodeCall = WyvernSchemas.encodeCall
 
@@ -41,39 +42,6 @@ export const orderToJSON = (order) => {
   return asJSON
 }
 
-export const orderFromJSON = (order) => {
-  const hash = WyvernProtocol.getOrderHashHex(order)
-  if (hash !== order.hash) throw new Error('Invalid hash: ' + hash + ', ' + order.hash)
-  const fromJSON = {
-    hash: order.hash,
-    metadata: order.metadata,
-    exchange: order.exchange,
-    maker: order.maker,
-    taker: order.taker,
-    makerFee: new BigNumber(order.makerFee),
-    takerFee: new BigNumber(order.takerFee),
-    feeRecipient: order.feeRecipient,
-    side: JSON.parse(order.side),
-    saleKind: JSON.parse(order.saleKind),
-    target: order.target,
-    howToCall: JSON.parse(order.howToCall),
-    calldata: order.calldata,
-    replacementPattern: order.replacementPattern,
-    staticTarget: order.staticTarget,
-    staticExtradata: order.staticExtradata,
-    paymentToken: order.paymentToken,
-    basePrice: new BigNumber(order.basePrice),
-    extra: new BigNumber(order.extra),
-    listingTime: new BigNumber(order.listingTime),
-    expirationTime: new BigNumber(order.expirationTime),
-    salt: new BigNumber(order.salt),
-    v: parseInt(order.v),
-    r: order.r,
-    s: order.s
-  }
-  return fromJSON
-}
-
 const promisify = (inner) =>
   new Promise((resolve, reject) =>
     inner((err, res) => {
@@ -90,6 +58,7 @@ const toProviderInstance = (str) => {
   }
 }
 
+export var wyvernExchange
 export var providerInstance
 export var protocolInstance
 export var web3
@@ -170,7 +139,7 @@ const postOrder = async ({ state, commit }, { order, callback }) => {
     order.r || '0x',
     order.s || '0x')
   if (!valid) throw new Error('Order did not pass validation!')
-  await api.postOrder(state.settings.orderbookServer, order)
+  await wyvernExchange.postOrder(order)
   callback()
 }
 
@@ -239,7 +208,7 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
   const proxyABI = {'target': state.web3.proxy, 'constant': false, 'inputs': [{'name': 'dest', 'type': 'address'}, {'name': 'howToCall', 'type': 'uint8'}, {'name': 'calldata', 'type': 'bytes'}], 'name': 'proxyAssert', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}
   const sellProxy = (web3.eth.contract([proxyABI])).at(state.web3.proxy)
   console.log(sellProxy, buy.target, buy.howToCall, buy.calldata)
-  const sellProxySim = await promisify(c => sellProxy.proxyAssert.call(buy.target, buy.howToCall, buy.calldata, {from: account}, c))
+  const sellProxySim = await promisify(c => sellProxy.proxyAssert.call(buy.target, buy.howToCall, buy.calldata, {from: sell.maker}, c))
   console.log('sellProxySim', sellProxySim)
 
   const atomicMatchSimulation = await protocolInstance.wyvernExchange.atomicMatch_.estimateGasAsync(
@@ -342,7 +311,7 @@ export const getRecentEvents = async (schemas, fromBlockNumber, toBlockNumber) =
       const events = await promisify(c => contract[transferEvent.name]({}, {fromBlock: fromBlockNumber, toBlock: toBlockNumber}).get(c))
       return events.map(e => ({
         schema: s,
-        asset: transferEvent.nftFromInputs(e.args),
+        asset: transferEvent.assetFromInputs(e.args),
         event: e
       }))
     } else {
@@ -366,6 +335,7 @@ export const bind = (store) => {
   poll = async () => {
     providerInstance = toProviderInstance(store.state.settings.web3Provider)
     web3 = new Web3(providerInstance)
+    wyvernExchange = new exchangeAPI.WyvernExchange(store.state.settings.orderbookServer)
 
     const start = Date.now() / 1000
     const newBlockNumber = await promisify(web3.eth.getBlockNumber)
@@ -393,6 +363,11 @@ export const bind = (store) => {
         gasPrice: store.state.settings.gasPrice
       })
       schemas = WyvernSchemas.schemas[network]
+      window.formatters = {}
+      schemas.map(s => {
+        s.formatter = cachedAsync(s.formatter, 'schema:formatter:' + s.name)
+        window.formatters[s.name] = s.formatter
+      })
       store.commit('setWeb3Schemas', schemas)
       tokens = WyvernSchemas.tokens[network]
       store.commit('setWeb3Tokens', tokens)
@@ -404,6 +379,16 @@ export const bind = (store) => {
         proxy = null
       }
       store.commit('setWeb3Proxy', proxy)
+    }
+
+    const transformAsset = (asset) => {
+      asset.schema = schemas.filter(s => s.name === asset.schema)[0]
+      return asset
+    }
+
+    store.dispatch('fetchPersonalAssets', {query: { owner: account.toLowerCase(), limit: 1000 }, transform: arr => arr.map(transformAsset)})
+    if (proxy !== null) {
+      store.dispatch('fetchProxyAssets', {query: { owner: proxy.toLowerCase(), limit: 1000 }, transform: arr => arr.map(transformAsset)})
     }
 
     prevNetwork = network
@@ -425,69 +410,6 @@ export const bind = (store) => {
         return { address: t.address, balanceOnContract: new BigNumber(balanceOnContract), approvedOnExchange: new BigNumber(approvedOnExchange) }
       }))
       store.commit('setWeb3Balances', balances)
-    }
-
-    {
-      const assetsBySchema = await Promise.all(schemas.map(async s => {
-        if (!account) return []
-        const transferEvent = s.events.transfer
-        const tokensOfOwnerByIndexFunction = s.functions.tokensOfOwnerByIndex
-        if (transferEvent) {
-          const contract = web3.eth.contract([transferEvent]).at(transferEvent.target)
-          const destination = transferEvent.inputs.filter(i => i.kind === 'destination')[0]
-          const source = transferEvent.inputs.filter(i => i.kind === 'source')[0]
-          if (!destination || !source) return [] // TODO
-          var receiveFilter = {}
-          receiveFilter[destination.name] = [account]
-          if (proxy !== null) receiveFilter[destination.name].push(proxy)
-          const receiveEvents = await promisify(c => contract[transferEvent.name](receiveFilter, {fromBlock: 0}).get(c))
-          var sendFilter = {}
-          sendFilter[source.name] = [account]
-          if (proxy !== null) sendFilter[source.name].push(proxy)
-          const sendEvents = await promisify(c => contract[transferEvent.name](sendFilter, {fromBlock: 0}).get(c))
-          const assets = receiveEvents.filter(rE => {
-            const asset = transferEvent.nftFromInputs(rE.args)
-            return sendEvents.filter(sE => JSON.stringify(transferEvent.nftFromInputs(sE.args)) === JSON.stringify(asset) &&
-              (sE.args[source.name] === rE.args[destination.name]) &&
-              (sE.blockNumber > rE.blockNumber || (sE.blockNumber === rE.blockNumber && sE.transactionIndex > rE.transactionIndex))).length === 0
-          }).map(rE => ({
-            schema: s,
-            asset: transferEvent.nftFromInputs(rE.args),
-            proxy: rE.args[destination.name] === proxy
-          }))
-          return assets
-        } else if (tokensOfOwnerByIndexFunction) {
-          const contract = web3.eth.contract([tokensOfOwnerByIndexFunction]).at(tokensOfOwnerByIndexFunction.target)
-          const owner = tokensOfOwnerByIndexFunction.inputs.filter(i => i.kind === 'owner')[0]
-          const index = tokensOfOwnerByIndexFunction.inputs.filter(i => i.kind === 'index')[0]
-          if (!owner || !index) return []
-          var assets = []
-          const fetch = async (indexValue, address, isProxy) => {
-            owner.value = address
-            index.value = indexValue
-            const result = await promisify(c => contract[tokensOfOwnerByIndexFunction.name].call(owner.value, index.value, {from: account}, c))
-            const nft = tokensOfOwnerByIndexFunction.nftFromOutputs(result)
-            if (nft === null) {
-            } else {
-              assets.push({schema: s, asset: nft, proxy: isProxy})
-              return fetch(indexValue + 1)
-            }
-          }
-          await fetch(0, account, false)
-          await fetch(0, proxy, true)
-          return assets
-        } else {
-          return []
-        }
-      }))
-      const assets = [].concat(...assetsBySchema).reverse()
-      store.commit('setWeb3Assets', assets)
-    }
-
-    {
-      const contract = web3.eth.contract(WyvernExchange).at(WyvernProtocol.getExchangeContractAddress(network))
-      const events = await promisify(c => contract.allEvents({fromBlock: 0}).get(c))
-      console.log('exchange events', events)
     }
 
     const end = Date.now() / 1000

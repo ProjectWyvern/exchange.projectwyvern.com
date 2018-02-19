@@ -59,7 +59,7 @@
   </v-content>
   <v-footer app class="footer hidden-xs-only">
     <span style="margin: 0 auto;">
-      Prerelease Alpha - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers.
+      Live Beta - {{ branch }}/{{ hash }}. © 2018 Project Wyvern Developers.
     </span>
   </v-footer>
 </v-app>
@@ -145,7 +145,7 @@ export default {
       drawer: null,
       drawerLeft: true,
       links: [
-        { banner: 'Prerelease Alpha' },
+        { banner: 'Live Beta' },
         { name: 'Home', icon: 'home', path: '/' },
         { divider: true },
         { section: 'Orders' },
@@ -153,7 +153,7 @@ export default {
         { name: 'Post', icon: 'create', path: '/orders/post' },
         { divider: true },
         { section: 'Assets' },
-        { name: 'Directory', icon: 'view_list', path: '/directory' },
+        { name: 'Directory', icon: 'view_list', path: '/assets' },
         { name: 'Schemas', icon: 'developer_board', path: '/schemas' },
         { divider: true },
         { section: 'Account' },

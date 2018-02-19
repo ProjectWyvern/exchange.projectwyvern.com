@@ -101,6 +101,7 @@
 import BigNumber from 'bignumber.js'
 
 import { encodeSell, encodeBuy } from 'wyvern-schemas'
+import { feeRecipient } from 'wyvern-exchange'
 
 import Order from '../components/Order'
 import Schema from '../components/Schema'
@@ -145,10 +146,12 @@ export default {
       expirationTime: null
     }
   },
+  asyncComputed: {
+    previewMetadata: async function () {
+      return this.schema.formatter(this.order.metadata.asset)
+    }
+  },
   computed: {
-    previewMetadata: function () {
-      return this.schema.formatter(this.order.metadata.nft)
-    },
     ready: function () {
       return !!this.$store.state.web3.base
     },
@@ -187,15 +190,15 @@ export default {
       try {
         const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
         const token = this.tokens.filter(t => t.address === this.token)[0]
-        const nft = this.schema.nftFromFields(this.values)
-        const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, nft, account) : encodeSell(this.schema, nft)
+        const asset = this.schema.assetFromFields(this.values)
+        const { target, calldata, replacementPattern } = this.side === 'buy' ? encodeBuy(this.schema, asset, account) : encodeSell(this.schema, asset)
         const order = {
           exchange: WyvernProtocol.getExchangeContractAddress(this.$store.state.web3.base.network),
           maker: account,
           taker: WyvernProtocol.NULL_ADDRESS,
           makerFee: new BigNumber(0),
           takerFee: new BigNumber(0),
-          feeRecipient: account,
+          feeRecipient: feeRecipient,
           side: (this.side === 'buy' ? 0 : 1),
           saleKind: this.saleKind,
           target: target,
@@ -217,7 +220,7 @@ export default {
     },
     metadata: function () {
       return {
-        nft: this.schema.nftFromFields(this.values),
+        asset: this.schema.assetFromFields(this.values),
         schema: this.schema.name
       }
     }

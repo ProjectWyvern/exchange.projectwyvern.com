@@ -1,54 +1,61 @@
 <template>
 <v-container class="home">
-<v-layout>
+<v-layout row wrap>
 <v-flex xs12>
 <p>
-<v-alert color="info" icon="priority_high" value="true" outline>
-This is a prerelease alpha version, running on Ethereum's Rinkeby testnet. Expect UI/UX bugs. Please report issues and send feedback <a href="https://discord.gg/dZZdybs" target="_blank">on Discord</a>.
+<v-alert icon="priority_high" value="true" outline :style="style">
+This is a live beta running on the Ethereum mainnet. The protocol <a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/master/audits/v1/solidified_audit_report.pdf" target="_blank">has been audited</a> and subjected to a <a href="https://medium.com/project-wyvern/wyvern-protocol-bug-bounty-5k-65c0f8d9998e" target="_blank">public bounty</a>, so it should be solid, but there may be a few UI/UX bugs. Please report issues and send feedback <a href="https://discord.gg/dZZdybs" target="_blank">on Discord</a>.
+</v-alert><br />
+<v-alert icon="help" value="true" outline :style="style">
+Not sure what the Wyvern Exchange is or want the ELI5 overview? Read the <a href="" target="_blank">launch announcement</a>.
 </v-alert>
 </p><br />
-<p>
-<div class="heading">What is the Wyvern Exchange?</div><br />
-The Wyvern Exchange is a decentralized digital asset exchange running on the Ethereum blockchain.<br />
-Using the Wyvern Exchange, you can buy or sell anything you can represent on Ethereum, from virtual kittens to smart contracts, to or from anyone in the world.
-</p><br />
-<p>
-<div class="heading">Why use the Wyvern Exchange?</div><br />
-<div class="small-heading">No trust required.</div><br />
-The Wyvern Exchange runs on the <a href="https://projectwyvern.com" target="_blank">Wyvern Protocol</a>, a completely open-source platform for exchanging digital assets represented on the Ethereum blockchain.<br />
-Neither we nor anyone you trade with can steal your funds or prevent you from transferring your assets, and if we were to vanish in a quantum anomaly, you could simply run the Exchange yourself.
-</p>
-<p>
-<div class="small-heading">Buy or sell whatever you want.</div><br />
-The Wyvern protocol is representation-agnostic. If you can send it with an Ethereum transaction, you can buy or sell it on the Exchange.<br />
-The Wyvern Exchange streamlines UI/UX for common asset types - if you'd like your asset to be added, <a href="https://github.com/projectwyvern/wyvern-schemas" target="_blank">let us know</a>.
-</p>
-<p>
-<div class="small-heading">Buy or sell the way you want.</div><br />
-Choose your method of sale - the Wyvern Exchange supports fixed-price sales and Dutch auctions right now, and later protocol versions will add more options.<br />
-The Exchange is a two-sided marketplace. Both buy-side and sell-side orders are supported: you can sell your particular digital cat or place an order to buy any digital cat with blue eyes and a red tail.
-</p>
-<p>
-<div class="small-heading">No rent-extracting intermediaries.</div><br />
-Right now, during beta, the Wyvern Exchange charges no fees at all.<br />
-Later on, a fraction of a percent of each sale will be charged to pay for server infrastructure and support protocol development - but if you don't like that fee, you can run your own version of the Exchange without one!
-</p>
-<br />
-<p>
-<div class="heading">How do I get started?</div><br />
-Navigate using the left sidebar to browse existing orders (assets for sale or purchase), place an order of your own, or browse through the digital assets you already possess.
-</p>
 </v-flex xs12>
+<v-flex xs12 md6>
+<div class="small-heading">Recently Settled Orders</div>
+<v-layout v-if="settlements" row wrap>
+<v-flex xs12 v-for="(settlement, index) in settlements" :key="index">
+{{ settlement.transactionHashIndex }}
+</v-flex>
+</v-layout>
+<v-progress-linear class="progress" v-if="!settlements" v-bind:indeterminate="true"></v-progress-linear>
+</v-flex>
+<v-flex xs12 md6>
+<div class="small-heading">Recently Posted Orders</div>
+<v-flex xs12 v-for="(order, index) in orders" :key="index">
+{{ order.hash }}
+</v-flex>
+<v-progress-linear class="progress" v-if="!orders" v-bind:indeterminate="true"></v-progress-linear>
+</v-flex>
 </v-layout>
 </v-container>
 </template>
 
 <script>
 export default {
+  name: 'home',
   metaInfo: {
     title: 'Home'
   },
+  created: function () {
+    this.reload()
+  },
+  methods: {
+    reload: function () {
+      this.$store.dispatch('fetchRecentSettlements', {})
+      this.$store.dispatch('fetchRecentOrders', {})
+    }
+  },
   computed: {
+    settlements: function () {
+      return this.$store.state.recentSettlements
+    },
+    orders: function () {
+      return this.$store.state.recentOrders
+    },
+    style: function () {
+      return {color: this.$vuetify.theme.primary + ' !important'}
+    }
   }
 }
 </script>
@@ -58,16 +65,23 @@ export default {
   font-size: 1.2em;
 }
 
-.heading {
-  font-variant: small-caps;
-  font-size: 2em;
-}
-
 .small-heading {
-  font-size: 1.5em;
+  text-align: center;
+  font-size: 1.3em;
+  font-variant: small-caps;
 }
 
 a:hover {
   text-decoration: underline;
+}
+
+a {
+  color: blue;
+}
+
+.progress {
+  width: 50%;
+  margin: 0 auto;
+  margin-top: 3em;
 }
 </style>

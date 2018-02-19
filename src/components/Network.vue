@@ -25,6 +25,13 @@
       <v-select v-bind:items="servers" v-model="server" label="Orderbook Server" item-value="value" item-text="text"></v-select>
     </v-list-tile-content>
   </v-list-tile>
+  <v-list-tile>
+    <v-list-tile-content>
+      <div style="margin: 0 auto; margin-top: 20px;">
+        <a href="https://status.projectwyvern.com/" target="_blank">Orderbook Server Status</a>
+      </div>
+    </v-list-tile-content>
+  </v-list-tile>
 </v-list>
 </template>
 
@@ -40,12 +47,13 @@ export default {
     return {
       providers: [
         {text: 'Injected (Metamask/Parity)', value: 'injected'},
-        {text: 'Localhost (Testing)', value: 'http://localhost:8545'},
+        {text: 'Infura [Main]', value: 'https://mainnet.infura.io/'},
         {text: 'Infura [Rinkeby]', value: 'https://rinkeby.infura.io/'}
       ],
       servers: [
-        {text: 'Localhost (Testing)', value: 'http://127.0.0.1:8080'},
-        {text: 'Wyvern Exchange [Rinkeby]', value: 'https://bookrinkeby.projectwyvern.com'}
+        {text: 'Wyvern Exchange [Main]', value: 'https://bookmain.projectwyvern.com'},
+        {text: 'Wyvern Exchange [Rinkeby]', value: 'https://bookrinkeby.projectwyvern.com'},
+        {text: 'Localhost (Testing)', value: 'http://127.0.0.1:8080'}
       ]
     }
   },

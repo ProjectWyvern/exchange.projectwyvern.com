@@ -4,16 +4,17 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import createLogger from 'vuex/dist/logger'
 import VuexPersistence from 'vuex-persist'
+import { LRUMap } from 'lru_map'
 
 import { logger } from './logging.js'
-import api from './api.js'
-import { poll, web3Actions, trackOrder, bind } from './aux.js'
+import { wyvernExchange, poll, web3Actions, trackOrder, bind } from './aux.js'
+import { writethrough } from './cache.js'
 
 Vue.use(Vuex)
 
 const vuexLocal = new VuexPersistence({
   storage: window.localStorage,
-  reducer: state => ({settings: state.settings, notifications: state.notifications})
+  reducer: state => ({settings: state.settings, notifications: state.notifications, cache: state.cache})
 })
 
 var provider = 'injected'
@@ -22,7 +23,7 @@ try {
 } catch (err) {
   logger.warn({ extra: { err } }, 'Could not parse provider from localStorage')
   if (!window.web3) {
-    const def = 'https://rinkeby.infura.io/'
+    const def = 'https://mainnet.infura.io/'
     provider = def
   }
 }
@@ -58,17 +59,25 @@ logger.debug({extra: {provider: provider}}, 'Chose web3 provider')
 const state = {
   notifications: [],
   settings: {
-    version: '0.3.0',
+    version: '0.4.0',
+    cacheSize: 1000,
     gasPrice: null,
     nightMode: false,
     advancedMode: false,
     web3Provider: provider,
-    orderbookServer: 'https://bookrinkeby.projectwyvern.com'
+    orderbookServer: 'https://bookmain.projectwyvern.com'
   },
+  cache: [],
   web3: {},
   orders: null,
+  recentOrders: null,
   ordersByHash: {},
-  trackedOrders: []
+  trackedOrders: [],
+  settlements: null,
+  recentSettlements: null,
+  assets: null,
+  personalAssets: [],
+  proxyAssets: []
 }
 
 try {
@@ -81,17 +90,35 @@ try {
   logger.warn({ extra: { err } }, 'Could not parse version from localStorage')
 }
 
+var entries
+try {
+  entries = JSON.parse(window.localStorage.vuex).cache
+} catch (err) {
+  logger.warn({ extra: { err } }, 'Could not parse cache entries from localStorage')
+}
+const lruCache = new LRUMap(state.settings.cacheSize, entries)
+
 const getters = {}
 
+const fromQuery = (name, func, clear) => {
+  return async ({ state, commit }, { query, transform }) => {
+    transform = transform || (x => x)
+    if (clear) commit(name, null)
+    const result = await wyvernExchange[func](query)
+    commit(name, transform(result))
+  }
+}
+
 const actions = Object.assign({
-  fetchOrders: async ({ state, commit }) => {
-    commit('setOrders', null)
-    const orders = await api.orders(state.settings.orderbookServer)
-    commit('setOrders', orders)
-  },
+  fetchPersonalAssets: fromQuery('setPersonalAssets', 'assets'),
+  fetchProxyAssets: fromQuery('setProxyAssets', 'assets'),
+  fetchOrders: fromQuery('setOrders', 'orders', true),
+  fetchRecentOrders: fromQuery('setRecentOrders', 'orders'),
+  fetchSettlements: fromQuery('setSettlements', 'settlements', true),
+  fetchRecentSettlements: fromQuery('setRecentSettlements', 'settlements'),
   fetchOrder: async ({ state, commit }, { hash }) => {
     commit('setOrder', { hash, order: null })
-    const order = await api.order(state.settings.orderbookServer, hash)
+    const order = await wyvernExchange.order(hash)
     commit('setOrder', { hash, order })
     commit('trackOrder', hash)
     await trackOrder({ state, commit }, hash)
@@ -99,6 +126,9 @@ const actions = Object.assign({
 }, web3Actions)
 
 const mutations = {
+  setCache: (state, cache) => {
+    Vue.set(state, 'cache', cache.toJSON().map(x => [x.key, x.value]))
+  },
   setNightMode: (state, nightMode) => {
     Vue.set(state.settings, 'nightMode', nightMode)
   },
@@ -134,8 +164,23 @@ const mutations = {
   setOrderbookServer: (state, server) => {
     Vue.set(state.settings, 'orderbookServer', server)
   },
+  setPersonalAssets: (state, assets) => {
+    Vue.set(state, 'personalAssets', assets)
+  },
+  setProxyAssets: (state, assets) => {
+    Vue.set(state, 'proxyAssets', assets)
+  },
+  setSettlements: (state, settlements) => {
+    Vue.set(state, 'settlements', settlements)
+  },
+  setRecentSettlements: (state, settlements) => {
+    Vue.set(state, 'recentSettlements', settlements)
+  },
   setOrders: (state, orders) => {
     Vue.set(state, 'orders', orders)
+  },
+  setRecentOrders: (state, orders) => {
+    Vue.set(state, 'recentOrders', orders)
   },
   trackOrder: (state, hash) => {
     state.trackedOrders.push(hash)
@@ -191,5 +236,7 @@ const store = new Vuex.Store({ state, getters, actions, mutations, plugins })
 logger.debug({extra: {}}, 'Initialized Vuex store')
 
 bind(store)
+
+writethrough(store, lruCache)
 
 export default store

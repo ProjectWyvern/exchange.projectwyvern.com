@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import VueMeta from 'vue-meta'
 import Vuetify from 'vuetify'
 import VueAnalytics from 'vue-analytics'
+import AsyncComputed from 'vue-async-computed'
 
 import App from './App.vue'
 import routes from './routes.js'
@@ -10,6 +11,7 @@ import store from './store.js'
 
 import '../node_modules/vuetify/dist/vuetify.min.css'
 
+Vue.use(AsyncComputed)
 Vue.use(VueRouter)
 Vue.use(VueMeta)
 Vue.use(Vuetify)

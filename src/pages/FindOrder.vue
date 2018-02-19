@@ -26,7 +26,7 @@
     <v-layout row wrap v-if="orders">
       <v-flex xs12 md6 lg4 xl3 v-for="(order, index) in orders" :key="index">
         <router-link :to="'/orders/' + order.hash">
-          <order hover :order="order" :schema="order.schema.name" :metadata="order.schema.formatter(order.metadata.nft)"></order>
+          <order hover :order="order" :schema="order.schema.name" :asset="order.metadata.asset"></order>
         </router-link>
       </v-flex>
     </v-layout>
@@ -64,7 +64,7 @@ export default {
   },
   methods: {
     reload: function () {
-      this.$store.dispatch('fetchOrders')
+      this.$store.dispatch('fetchOrders', {})
     }
   },
   watch: {
@@ -117,15 +117,15 @@ export default {
       const orders = !this.$store.state.web3.schemas ? null : !this.$store.state.orders ? null : this.$store.state.orders.map(o => {
         const schema = this.$store.state.web3.schemas.filter(s => s.name === o.metadata.schema)[0]
         o.schema = schema
-        o.formatted = o.schema.formatter(o.metadata.nft)
+        // o.formatted = o.schema.formatter(o.metadata.asset)
         return o
       }).filter(o => {
         return (
           (this.schema === null || o.schema.name === this.schema) &&
           (this.token === null || o.paymentToken === this.token) &&
           (this.saleKind === -1 || o.saleKind === this.saleKind) &&
-          (this.side === -1 || o.side === this.side) &&
-          (this.filter === null || o.formatted.title.toLowerCase().indexOf(this.filter.toLowerCase()) !== -1)
+          (this.side === -1 || o.side === this.side)
+          // (this.filter === null || o.formatted.title.toLowerCase().indexOf(this.filter.toLowerCase()) !== -1)
         )
       })
       if (orders !== null) {

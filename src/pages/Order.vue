@@ -72,10 +72,13 @@ export default {
       this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: console.log, onTxHash: onTxHash, onConfirm: onConfirm })
     }
   },
+  asyncComputed: {
+    metadata: async function () {
+      if (!this.schema) return null
+      return this.schema.formatter(this.order.metadata.asset)
+    }
+  },
   computed: {
-    metadata: function () {
-      return !this.schema ? {} : this.schema.formatter(this.order.metadata.nft)
-    },
     tokens: function () {
       return this.$store.state.web3.tokens
         ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
@@ -106,7 +109,7 @@ export default {
     orderToMatch: function () {
       if (!this.order || !this.$store.state.web3.base || !this.schema) return {}
       const account = this.$store.state.web3.base.account
-      const { target, calldata, replacementPattern } = this.order.side === 0 ? encodeSell(this.schema, this.order.metadata.nft) : encodeBuy(this.schema, this.order.metadata.nft, account)
+      const { target, calldata, replacementPattern } = this.order.side === 0 ? encodeSell(this.schema, this.order.metadata.asset) : encodeBuy(this.schema, this.order.metadata.asset, account)
       return {
         exchange: this.order.exchange,
         maker: account,

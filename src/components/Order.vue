@@ -1,7 +1,7 @@
 <template>
 <v-card :hover="hover" raised style="height: 350px; width: 350px;">
   <div style="height: 15px;"></div>
-  <asset class="elevation-0" :schema="schema" :metadata="metadata" style="margin-left: 25px"></asset>
+  <asset class="elevation-0" :schema="schema" :asset="asset" style="margin-left: 25px"></asset>
   <div class="saleInfoOuter">
     <div class="saleInfo">
     <div class="side">{{ side }}</div>
@@ -24,7 +24,7 @@ import Asset from './Asset'
 export default {
   name: 'order',
   components: { Asset },
-  props: ['order', 'schema', 'asset', 'metadata', 'signature', 'hover'],
+  props: ['order', 'schema', 'asset', 'signature', 'hover'],
   computed: {
     token: function () {
       return this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]

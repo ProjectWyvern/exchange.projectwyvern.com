@@ -7,7 +7,7 @@
       </v-card-title>
       <v-card-text>
       <v-text-field style="max-width: 400px;" v-model="transferTarget" label="Destination address" name="transferTarget"></v-text-field>
-      <div v-if="transferTarget !== ''">This will transfer ownership of {{ transferAsset ? transferAsset.schema.formatter(transferAsset.asset).title : '' }} to {{ transferTarget }}.</div>
+      <div v-if="transferTarget !== ''">This will transfer ownership of {{ transferAssetTitle }} to {{ transferTarget }}.</div>
       </v-card-text>
     <v-card-actions>
       <v-btn color="primary" :disabled="transferTarget === ''" @click.stop="transfer()">Transfer</v-btn>
@@ -34,7 +34,7 @@
       <v-layout row wrap>
         <v-flex v-for="(asset, index) in proxyAssets" xs12 md6 lg6 :key="index">
           <router-link :to="'/assets/abc'">
-            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :metadata="asset.schema.formatter(asset.asset)" :schema="asset.schema.name" :menu="makeMenu(asset)"></asset>
+            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset.asset" :schema="asset.schema" :formatted="asset.formatted" :menu="makeMenu(asset, true)"></asset>
           </router-link>
         </v-flex>
       </v-layout>
@@ -54,8 +54,8 @@
       <div :style="containerStyle">
       <v-layout row wrap>
         <v-flex v-for="(asset, index) in personalAssets" xs12 md6 lg6 :key="index">
-          <router-link :to="'/assets/abc'">
-            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :metadata="asset.schema.formatter(asset.asset)" :schema="asset.schema.name" :menu="makeMenu(asset)"></asset>
+          <router-link :to="'/assets/' + asset.hash">
+            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset.asset" :schema="asset.schema" :formatted="asset.formatted" :menu="makeMenu(asset, false)"></asset>
           </router-link>
         </v-flex>
       </v-layout>
@@ -102,25 +102,25 @@ export default {
       const data = encodeCall(abi, params)
       this.$store.dispatch('rawSend', { target: abi.target, data: data, amount: 0, onError: console.log, onTxHash: console.log, onConfirm: console.log })
     },
-    transfer: function () {
+    transfer: function (proxy) {
       const asset = this.transferAsset
-      if (asset.proxy) this.withdraw(asset, this.transferTarget)
+      if (proxy) this.withdraw(asset, this.transferTarget)
       else this.deposit(asset, this.transferTarget)
       this.transferAsset = null
       this.transferDialog = false
     },
-    makeMenu: function (asset) {
+    makeMenu: function (asset, proxy) {
       const transfer = () => { this.transferAsset = asset; this.transferDialog = true }
       var items = [
-        asset.proxy ? {title: 'Withdraw', func: () => this.withdraw(asset)} : {title: 'Deposit', func: () => this.deposit(asset)},
-        {title: 'Transfer', func: transfer}
+        proxy ? {title: 'Withdraw', func: () => this.withdraw(asset)} : {title: 'Deposit', func: () => this.deposit(asset)},
+        {title: 'Transfer', func: () => transfer(proxy)}
       ]
-      if (asset.proxy && asset.schema.nftToFields) {
+      if (proxy && asset.schema.assetToFields) {
         items.unshift({
           title: 'Sell',
           func: () => {
             const category = this.schemas.filter(s => s.name === asset.schema.name)[0].index
-            var query = {category: category, values: encodeURIComponent(JSON.stringify(asset.schema.nftToFields(asset.asset))), side: 'sell', step: 4}
+            var query = {category: category, values: encodeURIComponent(JSON.stringify(asset.schema.assetToFields(asset.asset))), side: 'sell', step: 4}
             this.$router.push({path: '/orders/post', query: query})
           }
         })
@@ -128,6 +128,13 @@ export default {
       return {
         items: items
       }
+    }
+  },
+  asyncComputed: {
+    transferAssetTitle: async function () {
+      if (!this.transferAsset) return null
+      const formatted = await this.transferAsset.schema.formatter(this.transferAsset.asset)
+      return formatted.title
     }
   },
   computed: {
@@ -144,19 +151,16 @@ export default {
       }
     },
     personalAssets: function () {
-      return this.assets.filter(a => !a.proxy).filter(a => {
-        const title = a.schema.formatter(a.asset).title.toLowerCase()
+      return this.$store.state.personalAssets.filter(a => {
+        const title = a.formatted.title.toLowerCase()
         return title.indexOf(this.personalFilter.toLowerCase()) !== -1
       })
     },
     proxyAssets: function () {
-      return this.assets.filter(a => a.proxy).filter(a => {
-        const title = a.schema.formatter(a.asset).title.toLowerCase()
+      return this.$store.state.proxyAssets.filter(a => {
+        const title = a.formatted.title.toLowerCase()
         return title.indexOf(this.exchangeFilter.toLowerCase()) !== -1
       })
-    },
-    assets: function () {
-      return this.$store.state.web3.assets || []
     },
     schemas: function () {
       return (this.$store.state.web3.schemas || []).map((s, i) => {
