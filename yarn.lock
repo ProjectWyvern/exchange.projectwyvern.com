@@ -7812,9 +7812,9 @@ ws@^3.0.0:
     safe-buffer "~5.1.0"
     ultron "~1.1.0"
 
-wyvern-exchange@0.1.5:
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/wyvern-exchange/-/wyvern-exchange-0.1.5.tgz#ad398dbe7fa2b5badd21a7a7c809ffe7da70eb89"
+wyvern-exchange@0.1.6:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/wyvern-exchange/-/wyvern-exchange-0.1.6.tgz#5998ccb306ef7b0cbfe70742eb6fcbbff7991794"
   dependencies:
     axios "^0.17.1"
     bignumber.js "^6.0.0"

@@ -8,7 +8,7 @@ var path = require('path')
 */
 
 module.exports = (options, req) => ({
-  transformModules: ['ethereumjs-util'],
+  transformModules: ['ethereumjs-util', 'wyvern-exchange', 'wyvern-schemas', 'lru_map'],
   entry: './src/index.js',
   html: {
     title: 'Wyvern Exchange',

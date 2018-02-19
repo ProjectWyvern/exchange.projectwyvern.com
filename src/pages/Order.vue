@@ -25,6 +25,30 @@
     </v-card-actions>
   </v-card>
 </v-dialog>
+<v-dialog v-model="cancelDialog" max-width="500px">
+  <v-card>
+    <v-card-title style="font-variant: small-caps; font-size: 1.4em;">
+      Cancelling Order
+    </v-card-title>
+    <v-card-text v-if="cancelled">
+      <v-icon style="color: green; margin-left: 10px; margin-right: 10px;">
+      check_circle
+      </v-icon>
+      Order cancelled.
+    </v-card-text>
+    <v-card-text v-else-if="cancelFailed">
+      Transaction rejected, this order may have already been matched or cancelled.
+    </v-card-text>
+    <v-card-text v-else-if="cancelling">
+      <v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-bind:indeterminate="true"></v-progress-circular> 
+      <div v-if="!cancelTx" style="margin-top: 1em; margin-left: 1em;">You will need to approve the transaction.</div><br />
+      <v-btn v-if="cancelTx" target="_blank" :href="getUrl(cancelTx)" style="margin-top: 2em;">View Transaction</v-btn>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn color="primary" flat @click.stop="cancelDialog = false">Close</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
 <v-layout row wrap>
 <v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center;" hidden-xs-only>
 Order {{ hash }}
@@ -59,7 +83,12 @@ Order {{ hash }}
 </div>
 </div>
 </v-flex>
-<v-flex xs12 v-if="order && !order.settlement">
+<v-flex xs12 v-if="order && !order.settlement && order.cancelledOrFinalized">
+<div style="margin: 0 auto; width: 200px;">
+This order has been cancelled.
+</div>
+</v-flex>
+<v-flex xs12 v-else-if="order && !order.settlement">
 <div style="margin: 0 auto; width: 100px;">
 <v-btn v-if="mine" raised @click.native="cancel()">Cancel</v-btn>
 <v-btn v-if="!mine" raised @click.native="match()">Match</v-btn>
@@ -95,6 +124,11 @@ export default {
     return {
       matchDialog: false,
       matchTx: null,
+      cancelDialog: false,
+      cancelTx: null,
+      cancelFailed: false,
+      cancelling: false,
+      cancelled: false,
       simulationFailed: false,
       matching: false,
       matched: false,
@@ -103,9 +137,14 @@ export default {
   },
   methods: {
     cancel: function () {
-      const onTxHash = () => { this.matching = true }
-      const onConfirm = () => { this.matched = true }
-      this.$store.dispatch('cancelOrder', { order: this.order, onTxHash: onTxHash, onConfirm: onConfirm, onError: console.log })
+      const onTxHash = (txHash) => { this.cancelTx = txHash }
+      const onConfirm = () => { this.cancelled = true; this.$store.dispatch('fetchOrder', { hash: this.hash }) }
+      const onError = () => { this.cancelFailed = true }
+      this.cancelling = true
+      this.cancelled = false
+      this.cancelFailed = false
+      this.cancelDialog = true
+      this.$store.dispatch('cancelOrder', { order: this.order, onTxHash: onTxHash, onConfirm: onConfirm, onError: onError })
     },
     match: function () {
       const buy = this.order.side === 0 ? this.order : this.orderToMatch
