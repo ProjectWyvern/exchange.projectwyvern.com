@@ -10,7 +10,7 @@ Order {{ this.$route.params.hash }}
 </div>
 </v-flex>
 <v-flex xs12 v-if="order">
-<asset style="margin: 0 auto;" :metadata="metadata" :schema="schema.name"></asset>
+<asset style="margin: 0 auto;" :schema="schema" :asset="order.asset"></asset>
 </v-flex>
 <v-flex xs12 v-if="order">
 <div style="text-align: center; line-height: 4em;">
@@ -24,6 +24,7 @@ Order {{ this.$route.params.hash }}
 </v-flex>
 <v-flex xs12 v-if="order">
 <div style="margin: 0 auto; width: 100px;">
+<v-btn v-if="mine" raised @click.native="cancel()">Cancel</v-btn>
 <v-btn v-if="!matching && !matched" raised @click.native="match()">
 Match
 </v-btn>
@@ -47,8 +48,10 @@ import { WyvernProtocol } from '../aux'
 export default {
   name: 'orderPage',
   components: { Asset },
-  metaInfo: {
-    title: 'View Order'
+  metaInfo: function () {
+    return {
+      title: this.order ? this.order.asset.formatted.title : 'View Order'
+    }
   },
   created: function () {
     this.$store.dispatch('fetchOrder', { hash: this.$route.params.hash })
@@ -64,18 +67,17 @@ export default {
     }
   },
   methods: {
+    cancel: function () {
+      const onTxHash = () => { this.matching = true }
+      const onConfirm = () => { this.matched = true }
+      this.$store.dispatch('cancelOrder', { order: this.order, onTxHash: onTxHash, onConfirm: onConfirm, onError: console.log })
+    },
     match: function () {
       const buy = this.order.side === 0 ? this.order : this.orderToMatch
       const sell = this.order.side === 0 ? this.orderToMatch : this.order
       const onTxHash = () => { this.matching = true }
       const onConfirm = () => { this.matched = true }
       this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: console.log, onTxHash: onTxHash, onConfirm: onConfirm })
-    }
-  },
-  asyncComputed: {
-    metadata: async function () {
-      if (!this.schema) return null
-      return this.schema.formatter(this.order.metadata.asset)
     }
   },
   computed: {
@@ -85,14 +87,13 @@ export default {
         : []
     },
     token: function () {
-      console.log(this.tokens)
       return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     expiry: function () {
-      return !this.order ? '' : (this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
+      return !this.order ? '' : (this.order.settlement ? '' : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
     },
     side: function () {
-      return !this.order ? '' : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
+      return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
     price: function () {
       return this.order.currentPrice && this.token ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null
@@ -105,6 +106,9 @@ export default {
     },
     schema: function () {
       return (!this.order || !this.$store.state.web3.schemas) ? null : this.$store.state.web3.schemas.filter(s => s.name === this.order.metadata.schema)[0]
+    },
+    mine: function () {
+      return this.order && this.$store.state.web3.base && this.order.maker === this.$store.state.web3.base.account
     },
     orderToMatch: function () {
       if (!this.order || !this.$store.state.web3.base || !this.schema) return {}

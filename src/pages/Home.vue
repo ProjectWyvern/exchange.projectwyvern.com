@@ -1,30 +1,38 @@
 <template>
-<v-container class="home">
+<v-container class="home" >
 <v-layout row wrap>
 <v-flex xs12>
 <p>
-<v-alert icon="priority_high" value="true" outline :style="style">
+<v-alert class="alert" icon="priority_high" value="true" outline :style="style">
 This is a live beta running on the Ethereum mainnet. The protocol <a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/master/audits/v1/solidified_audit_report.pdf" target="_blank">has been audited</a> and subjected to a <a href="https://medium.com/project-wyvern/wyvern-protocol-bug-bounty-5k-65c0f8d9998e" target="_blank">public bounty</a>, so it should be solid, but there may be a few UI/UX bugs. Please report issues and send feedback <a href="https://discord.gg/dZZdybs" target="_blank">on Discord</a>.
 </v-alert><br />
-<v-alert icon="help" value="true" outline :style="style">
+<v-alert class="alert" icon="help" value="true" outline :style="style">
 Not sure what the Wyvern Exchange is or want the ELI5 overview? Read the <a href="" target="_blank">launch announcement</a>.
 </v-alert>
 </p><br />
 </v-flex xs12>
-<v-flex xs12 md6>
+<v-flex xs12 lg6>
 <div class="small-heading">Recently Settled Orders</div>
-<v-layout v-if="settlements" row wrap>
-<v-flex xs12 v-for="(settlement, index) in settlements" :key="index">
-{{ settlement.transactionHashIndex }}
+<br />
+<v-layout v-if="settlements" row wrap class="orders" align-content-center>
+<v-flex xs12 xl6 v-for="(settlement, index) in settlements" :key="index" style="padding-bottom: 1em;">
+<router-link :to="'/orders/' + settlement.order.hash">
+  <order hover :order="settlement.order" style="padding-bottom: 1em;"></order>
+</router-link>
 </v-flex>
 </v-layout>
 <v-progress-linear class="progress" v-if="!settlements" v-bind:indeterminate="true"></v-progress-linear>
 </v-flex>
-<v-flex xs12 md6>
+<v-flex xs12 lg6>
 <div class="small-heading">Recently Posted Orders</div>
-<v-flex xs12 v-for="(order, index) in orders" :key="index">
-{{ order.hash }}
+<br />
+<v-layout v-if="orders" row wrap class="orders" align-content-center>
+<v-flex xs12 xl6 v-for="(order, index) in orders" :key="index" style="padding-bottom: 1em;">
+<router-link :to="'/orders/' + order.hash">
+  <order hover :order="order" style="padding-bottom: 1em;"></order>
+</router-link>
 </v-flex>
+</v-layout>
 <v-progress-linear class="progress" v-if="!orders" v-bind:indeterminate="true"></v-progress-linear>
 </v-flex>
 </v-layout>
@@ -32,8 +40,11 @@ Not sure what the Wyvern Exchange is or want the ELI5 overview? Read the <a href
 </template>
 
 <script>
+import Order from '../components/Order'
+
 export default {
   name: 'home',
+  components: { Order },
   metaInfo: {
     title: 'Home'
   },
@@ -42,13 +53,13 @@ export default {
   },
   methods: {
     reload: function () {
-      this.$store.dispatch('fetchRecentSettlements', {})
-      this.$store.dispatch('fetchRecentOrders', {})
+      this.$store.dispatch('fetchRecentSettlements', {query: {limit: 4}})
+      this.$store.dispatch('fetchRecentOrders', {query: {limit: 4}})
     }
   },
   computed: {
     settlements: function () {
-      return this.$store.state.recentSettlements
+      return this.$store.state.recentSettlements ? this.$store.state.recentSettlements.map(s => { s.order.settlement = s; return s }) : null
     },
     orders: function () {
       return this.$store.state.recentOrders
@@ -61,6 +72,10 @@ export default {
 </script>
 
 <style scoped>
+.orders {
+  font-size: 0.8em;
+}
+
 .home {
   font-size: 1.2em;
 }
@@ -71,7 +86,7 @@ export default {
   font-variant: small-caps;
 }
 
-a:hover {
+.alert a:hover {
   text-decoration: underline;
 }
 

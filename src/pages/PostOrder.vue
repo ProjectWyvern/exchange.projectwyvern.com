@@ -16,7 +16,8 @@
   <v-stepper-items>
    <v-stepper-content step="1">
       <div class="explainer">
-      Select the kind of asset you want to buy or sell from the available categories, or select the "Custom" category to specify all fields manually.
+      Select the kind of asset you want to buy or sell from the available categories, or select the "Custom" category to specify all fields manually.<br />
+      If you want to sell a particular asset you already own, it may be easier to do so using the context menus on the <router-link to="/account/assets">assets page</router-link>.
       </div>
       <div v-if="schema" style="margin-bottom: 1em;">
         <schema expand="true" @click.native="category = schema.index" :schema="schema"></schema>
@@ -87,7 +88,9 @@
       <div class="explainer">
       Ensure this is the exact order you wish to place. Once you press "Post Order", you will be prompted to sign the order, then it will be submitted to the orderbook.
       </div><br />
-      <order v-if="schema && step == 5" :order="order" :metadata="previewMetadata" :schema="schema.name"></order>
+      <div v-if="schema && step === 5">
+        <order :order="order" :asset="metadata.asset" :schema="schema"></order>
+      </div>
       <br />
       <v-btn color="primary" @click.native="post">Post Order</v-btn>
       <v-btn @click.native="step = 4" flat>Back</v-btn>
@@ -136,19 +139,14 @@ export default {
         {text: 'Fixed Price', value: 0},
         {text: 'Dutch Auction', value: 1}
       ],
-      token: null,
-      amount: null,
+      token: query.token ? query.token : null,
+      amount: query.amount ? parseFloat(query.amount) : null,
       minimumBidIncrement: null,
       endingPrice: null,
       dateMenu: false,
       timeMenu: false,
       expirationDate: null,
       expirationTime: null
-    }
-  },
-  asyncComputed: {
-    previewMetadata: async function () {
-      return this.schema.formatter(this.order.metadata.asset)
     }
   },
   computed: {
@@ -229,9 +227,8 @@ export default {
     category: bind('category'),
     side: bind('side'),
     step: bind('step'),
-    values: function (n, o) {
-      console.log('values', n, o)
-    }
+    token: bind('token'),
+    amount: bind('amount')
   },
   methods: {
     valueChange: function () {
@@ -280,5 +277,9 @@ export default {
   margin-bottom: 2em;
   max-height: 800px;
   overflow: auto;
+}
+
+a {
+  color: blue;
 }
 </style>

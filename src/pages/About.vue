@@ -7,10 +7,10 @@ Using the Wyvern Exchange, you can buy or sell anything you can represent on Eth
 </p><br />
 <p>
 <div class="heading">Why use the Wyvern Exchange?</div><br />
-<div class="small-heading">No trust required.</div><br />
+<div class="small-heading">No counterparty trust required.</div><br />
 The Wyvern Exchange runs on the <a href="https://projectwyvern.com" target="_blank">Wyvern Protocol</a>, a completely open-source platform for exchanging digital assets represented on the Ethereum blockchain.<br />
 Neither we nor anyone you trade with can steal your funds or prevent you from transferring your assets, and if we were to vanish in a quantum anomaly, you could simply run the Exchange yourself.
-The Wyvern Protocol has been <a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/master/audits/v1/solidified_audit_report.pdf" target="_blank">audited</a> and subjected to a <a href="https://medium.com/project-wyvern/wyvern-protocol-bug-bounty-5k-65c0f8d9998e" target="_blank">public bug bounty</a>.
+The Wyvern Protocol has been <a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/master/audits/v1/solidified_audit_report.pdf" target="_blank">privately audited</a> and subjected to a <a href="https://medium.com/project-wyvern/wyvern-protocol-bug-bounty-5k-65c0f8d9998e" target="_blank">public bug bounty</a>.
 </p>
 <p>
 <div class="small-heading">Buy or sell whatever you want.</div><br />
@@ -31,7 +31,7 @@ Later on, a fraction of a percent of each sale will be charged to pay for server
 <br />
 <p>
 <div class="heading">How do I get started?</div><br />
-<router-link to="/orders/find">Browse existing orders</router-link>, <router-link to="/orders/post">place an order of your own</router-link>, or <router-link to="/account/assets">browse through the digital assets you already possess</router-link>.
+<router-link to="/orders">Browse existing orders</router-link>, <router-link to="/post">place an order of your own</router-link>, or <router-link to="/account/assets">browse through the digital assets you already possess</router-link>.
 </p>
 <br />
 <div class="heading">Learn More</div><br />

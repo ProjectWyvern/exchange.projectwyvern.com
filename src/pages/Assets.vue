@@ -33,8 +33,8 @@
       <div :style="containerStyle">
       <v-layout row wrap>
         <v-flex v-for="(asset, index) in proxyAssets" xs12 md6 lg6 :key="index">
-          <router-link :to="'/assets/abc'">
-            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset.asset" :schema="asset.schema" :formatted="asset.formatted" :menu="makeMenu(asset, true)"></asset>
+          <router-link :to="'/assets/' + asset.hash">
+            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset" :schema="asset.schema" :menu="makeMenu(asset, true)"></asset>
           </router-link>
         </v-flex>
       </v-layout>
@@ -55,7 +55,7 @@
       <v-layout row wrap>
         <v-flex v-for="(asset, index) in personalAssets" xs12 md6 lg6 :key="index">
           <router-link :to="'/assets/' + asset.hash">
-            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset.asset" :schema="asset.schema" :formatted="asset.formatted" :menu="makeMenu(asset, false)"></asset>
+            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset" :schema="asset.schema" :menu="makeMenu(asset, false)"></asset>
           </router-link>
         </v-flex>
       </v-layout>
@@ -121,7 +121,7 @@ export default {
           func: () => {
             const category = this.schemas.filter(s => s.name === asset.schema.name)[0].index
             var query = {category: category, values: encodeURIComponent(JSON.stringify(asset.schema.assetToFields(asset.asset))), side: 'sell', step: 4}
-            this.$router.push({path: '/orders/post', query: query})
+            this.$router.push({path: '/post', query: query})
           }
         })
       }

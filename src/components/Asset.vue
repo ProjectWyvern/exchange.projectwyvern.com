@@ -1,7 +1,7 @@
 <template>
 <v-card :hover="hover" raised style="height: 300px; width: 300px;">
   <div class="top">
-    <span class="schema"><code>{{ schema.name }}</code></span>
+    <span class="schema"><code>{{ schema ? schema.name : asset.schema }}</code></span>
     <v-btn class="url" @click.stop="navigate(metadata.url)" :href="metadata.url" target="_blank" flat>External URL</v-btn>
   </div>
   <v-card-media :src="metadata.thumbnail" height="150px">
@@ -30,10 +30,14 @@
 <script>
 export default {
   name: 'asset',
-  props: ['schema', 'hover', 'menu', 'asset', 'formatted'],
+  props: ['schema', 'hover', 'menu', 'asset'],
   asyncComputed: {
     metadata: async function () {
-      return this.formatted || this.schema.formatter(this.asset)
+      if (this.asset.formatted) {
+        return this.asset.formatted
+      } else {
+        return this.schema.formatter(this.asset)
+      }
     }
   },
   methods: {

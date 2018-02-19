@@ -2,37 +2,27 @@
 <v-container>
 <v-text-field style="margin-left: 2em; max-width: 400px;" v-model="filter" label="Filter by schema, event name, or arguments" name="filter"></v-text-field>
 <v-layout row wrap class="container" :style="style">
-<v-flex xs12 v-for="(event, index) in events" :key="index">
-<event :schema="event.schema" :asset="event.asset" :event="event.event"></event>
-</v-flex>
 </v-layout>
 </v-container>
 </template>
 
 <script>
-import Event from '../components/Event'
-import { waitForWeb3, getRecentEvents } from '../aux'
-
-// Need to build event query from search fields.
-// Display as grid, sorted by recency, not as event list.
+// Need to build asset query from search fields.
+// Display as grid, sorted by recency.
 // Infinite scroll going back / forward in time.
 // Goal: easy event search across fields, across particular assets, and across schemas.
 
 export default {
-  components: { Event },
+  name: 'directory',
   metaInfo: {
     title: 'Asset Directory'
   },
   data: function () {
     return {
-      events: [],
       filter: ''
     }
   },
   created: async function () {
-    await waitForWeb3()
-    const evts = await getRecentEvents(this.$store.state.web3.schemas, this.$store.state.web3.base.blockNumber - 50000)
-    this.events = evts
   },
   computed: {
     style: function () {

@@ -12,6 +12,14 @@ import { method, ERC20, CanonicalWETH } from './abis/index.js'
 
 const encodeCall = WyvernSchemas.encodeCall
 
+const promisify = (inner) =>
+  new Promise((resolve, reject) =>
+    inner((err, res) => {
+      if (err) { reject(err) }
+      resolve(res)
+    })
+  )
+
 export const orderToJSON = (order) => {
   var asJSON = {
     exchange: order.exchange.toLowerCase(),
@@ -36,19 +44,10 @@ export const orderToJSON = (order) => {
     salt: order.salt.toString()
   }
   const hash = WyvernProtocol.getOrderHashHex(asJSON)
-  console.log('hash', hash)
   asJSON.hash = hash
   asJSON.metadata = order.metadata
   return asJSON
 }
-
-const promisify = (inner) =>
-  new Promise((resolve, reject) =>
-    inner((err, res) => {
-      if (err) { reject(err) }
-      resolve(res)
-    })
-  )
 
 const toProviderInstance = (str) => {
   if (str === 'injected') {
@@ -143,15 +142,34 @@ const postOrder = async ({ state, commit }, { order, callback }) => {
   callback()
 }
 
+const cancelOrder = async ({ state, commit }, { order, onTxHash, onConfirm }) => {
+  const accounts = await promisify(web3.eth.getAccounts)
+  const account = accounts[0]
+  const txHash = await protocolInstance.wyvernExchange.cancelOrder_.sendTransactionAsync(
+    [order.exchange, order.maker, order.taker, order.feeRecipient, order.target, order.staticTarget, order.paymentToken],
+    [order.makerFee, order.takerFee, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt],
+    order.side,
+    order.saleKind,
+    order.howToCall,
+    order.calldata,
+    order.replacementPattern,
+    order.staticExtradata,
+    order.v, order.r, order.s,
+    {from: account})
+  commit('commitTx', { txHash: txHash })
+  onTxHash(txHash)
+  track(txHash, (success) => {
+    commit('mineTx', { txHash: txHash, success: success })
+    onConfirm(success)
+  })
+}
+
 const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, onConfirm }) => {
   console.log('atomicMatch', JSON.stringify({buy: buy, sell: sell}))
   const accounts = await promisify(web3.eth.getAccounts)
   const account = accounts[0]
-  console.log('from', account)
-  console.log('buy.maker', buy.maker)
-  console.log('sell.maker', sell.maker)
 
-  /* this is a bug, short-circuit not working properly */
+  /* This is a bug, short-circuit not working properly. */
   var sellUnsigned
   if (!buy.r || !buy.s) {
     sellUnsigned = false
@@ -202,14 +220,6 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
     { from: account }
   )
   console.log('ordersCanMatch', ordersCanMatch)
-  const orderCalldataCanMatch = await protocolInstance.wyvernExchange.orderCalldataCanMatch.callAsync(buy.calldata, buy.replacementPattern, sell.calldata, sell.replacementPattern)
-  console.log('orderCalldataCanMatch', orderCalldataCanMatch)
-
-  const proxyABI = {'target': state.web3.proxy, 'constant': false, 'inputs': [{'name': 'dest', 'type': 'address'}, {'name': 'howToCall', 'type': 'uint8'}, {'name': 'calldata', 'type': 'bytes'}], 'name': 'proxyAssert', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}
-  const sellProxy = (web3.eth.contract([proxyABI])).at(state.web3.proxy)
-  console.log(sellProxy, buy.target, buy.howToCall, buy.calldata)
-  const sellProxySim = await promisify(c => sellProxy.proxyAssert.call(buy.target, buy.howToCall, buy.calldata, {from: sell.maker}, c))
-  console.log('sellProxySim', sellProxySim)
 
   const atomicMatchSimulation = await protocolInstance.wyvernExchange.atomicMatch_.estimateGasAsync(
     [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
@@ -253,6 +263,7 @@ export const web3Actions = {
   registerProxy: wrapAction(wrapSend('wyvernProxyRegistry', 'registerProxy')),
   atomicMatch: wrapAction(atomicMatch),
   postOrder: wrapAction(postOrder),
+  cancelOrder: wrapAction(cancelOrder),
   rawSend: wrapAction(async ({ state, commit }, { target, data, amount, onError, onTxHash, onConfirm }) => {
     const accounts = await promisify(web3.eth.getAccounts)
     const account = accounts[0]
@@ -286,40 +297,6 @@ export const trackOrder = async (store, hash) => {
     order.staticExtradata
   )
   store.commit('setOrderData', { hash, key: 'currentPrice', value: currentPrice })
-}
-
-var notified = false
-const notify = () => {
-  notified = true
-}
-
-export const waitForWeb3 = () => promisify(c => {
-  const check = () => {
-    if (notified) c()
-    else {
-      setTimeout(check, 100)
-    }
-  }
-  check()
-})
-
-export const getRecentEvents = async (schemas, fromBlockNumber, toBlockNumber) => {
-  const recentAssetEventsBySchema = await Promise.all(schemas.map(async s => {
-    const transferEvent = s.events.transfer
-    if (transferEvent) {
-      const contract = web3.eth.contract([transferEvent]).at(transferEvent.target)
-      const events = await promisify(c => contract[transferEvent.name]({}, {fromBlock: fromBlockNumber, toBlock: toBlockNumber}).get(c))
-      return events.map(e => ({
-        schema: s,
-        asset: transferEvent.assetFromInputs(e.args),
-        event: e
-      }))
-    } else {
-      return []
-    }
-  }))
-  const recentAssetEvents = [].concat(...recentAssetEventsBySchema).reverse()
-  return recentAssetEvents
 }
 
 export var poll
@@ -414,7 +391,6 @@ export const bind = (store) => {
 
     const end = Date.now() / 1000
     const diff = end - start
-    notify()
     logger.debug({extra: {latency: latency, diff: diff}}, 'Reloaded web3 state')
   }
   poll()

@@ -1,44 +1,42 @@
 <template>
-<v-card :hover="hover" raised style="height: 350px; width: 350px;">
+<v-card :hover="hover" raised style="height: 330px; width: 330px;">
   <div style="height: 15px;"></div>
-  <asset class="elevation-0" :schema="schema" :asset="asset" style="margin-left: 25px"></asset>
+  <asset class="elevation-0" :schema="schema" :asset="asset || order.asset" style="margin-left: 15px;"></asset>
   <div class="saleInfoOuter">
     <div class="saleInfo">
     <div class="side">{{ side }}</div>
-    <div class="expiry">{{ expiry }}</div>
     <div class="kind">{{ kind }}</div>
     <div class="price">{{ price }} {{ token.symbol }}</div>
+    <div class="expiry">{{ expiry }}</div>
     </div>
   </div>
-  <v-card-actions v-if="signature">
-    <v-btn flat>Details</v-btn>
-    <v-btn flat>Match</v-btn>
-  </v-card-actions>
 </v-card>
 </template>
 
 <script>
+import moment from 'moment'
+
 import { WyvernProtocol } from '../aux'
 import Asset from './Asset'
 
 export default {
   name: 'order',
   components: { Asset },
-  props: ['order', 'schema', 'asset', 'signature', 'hover'],
+  props: ['order', 'schema', 'hover', 'asset'],
   computed: {
     token: function () {
       return this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     tokens: function () {
       return this.$store.state.web3.tokens
-        ? [].concat(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
+        ? [].concat.apply(this.$store.state.web3.tokens.canonicalWrappedEther, this.$store.state.web3.tokens.otherTokens)
         : []
     },
     expiry: function () {
-      return this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + this.order.expirationTime
+      return this.order.settlement ? '' : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires ' + moment(this.order.expirationTime.toNumber() * 1000).fromNow()
     },
     side: function () {
-      return this.order.side === 0 ? 'For Purchase' : 'For Sale'
+      return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
     },
     price: function () {
       return this.token ? parseFloat(WyvernProtocol.toUnitAmount(this.order.basePrice, this.token.decimals)) : 0
@@ -56,6 +54,7 @@ export default {
 <style scoped>
 .saleInfoOuter {
   width: 100%;
+  font-size: 0.9em;
 }
 
 .saleInfo {
