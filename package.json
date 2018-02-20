@@ -29,9 +29,9 @@
     "vuetify": "^1.0.1",
     "vuex": "^3.0.1",
     "vuex-persist": "^1.0.3",
-    "wyvern-exchange": "0.1.6",
+    "wyvern-exchange": "^0.1.10",
     "wyvern-js": "0.1.1",
-    "wyvern-schemas": "0.1.5"
+    "wyvern-schemas": "^0.1.8"
   },
   "scripts": {
     "lint": "scripts/lint.sh",
