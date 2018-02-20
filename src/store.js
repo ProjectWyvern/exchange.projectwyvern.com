@@ -59,7 +59,8 @@ logger.debug({extra: {provider: provider}}, 'Chose web3 provider')
 const state = {
   notifications: [],
   settings: {
-    version: '0.4.0',
+    trackedTokens: {},
+    version: '0.5.0',
     cacheSize: 1000,
     gasPrice: null,
     nightMode: false,
@@ -218,6 +219,14 @@ const mutations = {
   },
   clearNotifications: (state) => {
     Vue.set(state, 'notifications', [])
+  },
+  trackToken: (state, addr) => {
+    Vue.set(state.settings.trackedTokens, addr, true)
+    poll(true)
+  },
+  untrackToken: (state, addr) => {
+    Vue.set(state.settings.trackedTokens, addr, false)
+    poll(true)
   }
 }
 

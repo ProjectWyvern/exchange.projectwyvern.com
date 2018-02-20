@@ -39,16 +39,31 @@
 </v-flex>
 <v-flex v-if="account" xs12>
 <br />
-<v-data-table v-bind:headers="headers" :items="balances" item-key="symbol" class="elevation-2" style="max-width: 800px;">
+<v-card style="max-width: 1000px;">
+<v-card-title>
+  Tokens
+  <v-spacer></v-spacer>
+  <v-switch style="position: relative; top: 1.5em; font-size: 1em; right: 1em;" :color="color" v-model="justTracked" label="Only Show Tracked"></v-switch>
+  <v-text-field
+    append-icon="search"
+    label="Search"
+    single-line
+    hide-details
+    v-model="tokenFilter"
+  ></v-text-field>
+</v-card-title>
+<v-data-table v-bind:headers="headers" :items="balances" item-key="symbol" style="max-width: 1000px;" :search="tokenFilter">
   <template slot="items" slot-scope="props">
     <tr>
       <td>{{ props.item.symbol }}</td>
-      <td class="text-xs-right">{{ props.item.name }}</td>
-      <td class="text-xs-right">{{ props.item.balanceOnContract }}</td>
-      <td class="text-xs-right"><v-switch style="margin-left: 70px; width: 30px; margin-right: -45px;" :color="$vuetify.theme.primary" v-model="props.item.enabled" @click.stop="toggle(props.item)"></v-switch></td>
+      <td>{{ props.item.name }}</td>
+      <td>{{ props.item.balanceOnContract }}</td>
+      <td class="text-xs-right"><v-switch style="margin-left: 10px; width: 30px; margin-right: -45px;" :color="color" v-model="props.item.tracked" @click.stop="track(props.item)"></v-switch></td>
+      <td class="text-xs-right"><v-switch style="margin-left: 10px; width: 30px; margin-right: -45px;" :color="color" v-model="props.item.enabled" @click.stop="toggle(props.item)"></v-switch></td>
     </tr>
   </template>
 </v-data-table>
+</v-card>
 </v-flex>
 </v-layout>
 </v-container>
@@ -69,11 +84,14 @@ export default {
   data: function () {
     return {
       amount: null,
+      tokenFilter: '',
+      justTracked: true,
       which: 'wrap',
       headers: [
         {text: 'Symbol', value: 'symbol', align: 'left'},
         {text: 'Name', value: 'name'},
         {text: 'Token Balance', value: 'balanceOnContract'},
+        {text: 'Tracked', value: 'tracked'},
         {text: 'Enabled', value: 'enabled'}
       ]
     }
@@ -82,6 +100,10 @@ export default {
     toggle: function (token) {
       if (token.enabled) this.unapprove(token)
       else this.approve(token)
+    },
+    track: function (token) {
+      if (token.tracked) this.$store.commit('untrackToken', token.address)
+      else this.$store.commit('trackToken', token.address)
     },
     action: function () {
       switch (this.which) {
@@ -110,6 +132,7 @@ export default {
     }
   },
   computed: {
+    color: function () { return this.$vuetify.theme.primary },
     enabled: {
       get: function () { return this.$store.state.web3.base.exchangeApproved.gt(0) },
       set: function (v) {
@@ -124,13 +147,14 @@ export default {
       return this.$store.state.web3.tokens ? this.$store.state.web3.tokens : {}
     },
     balances: function () {
-      return !this.$store.state.web3.balances ? [] : this.$store.state.web3.balances.map(b => {
+      return !this.$store.state.web3.balances ? [] : this.$store.state.web3.balances.filter(b => !this.justTracked || b.tracked).map(b => {
         const token = this.$store.state.web3.tokens.otherTokens.filter(t => t.address === b.address)[0]
         return {
           address: token.address,
           symbol: token.symbol,
           name: token.name,
           balanceOnContract: WyvernProtocol.toUnitAmount(b.balanceOnContract, token.decimals).toNumber(),
+          tracked: b.tracked,
           enabled: b.approvedOnExchange.gt(0)
         }
       })

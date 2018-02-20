@@ -6043,6 +6043,10 @@ range-parser@^1.0.3, range-parser@~1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/range-parser/-/range-parser-1.2.0.tgz#f49be6b487894ddc40dcc94a322f611092e00d5e"
 
+raven-js@^3.22.3:
+  version "3.22.3"
+  resolved "https://registry.yarnpkg.com/raven-js/-/raven-js-3.22.3.tgz#8330dcc102b699ffbc2f48790978b997bf4d8f75"
+
 raw-body@2.3.2:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/raw-body/-/raw-body-2.3.2.tgz#bcd60c77d3eb93cde0050295c3f379389bc88f89"
@@ -7926,9 +7930,9 @@ wyvern-js@0.1.1:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
-wyvern-schemas@^0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.1.8.tgz#4f3eecb40273308ae30c5929ecce4f88f1004a8b"
+wyvern-schemas@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.1.9.tgz#b95a61645f4913a746fab2b1134680ec3865f3f0"
   dependencies:
     axios "^0.17.1"
     babel-cli "^6.26.0"

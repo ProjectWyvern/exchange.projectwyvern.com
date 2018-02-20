@@ -20,6 +20,7 @@
     "lru_map": "^0.3.3",
     "poi": "^9.6.1",
     "prerender-spa-plugin": "^2.1.0",
+    "raven-js": "^3.22.3",
     "vue-analytics": "^5.8.0",
     "vue-async-computed": "^3.3.1",
     "vue-lazyload": "^1.1.4",
@@ -31,7 +32,7 @@
     "vuex-persist": "^1.0.3",
     "wyvern-exchange": "^0.1.10",
     "wyvern-js": "0.1.1",
-    "wyvern-schemas": "^0.1.8"
+    "wyvern-schemas": "^0.1.9"
   },
   "scripts": {
     "lint": "scripts/lint.sh",
