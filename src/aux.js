@@ -310,9 +310,11 @@ export const bind = (store) => {
       return asset
     }
 
-    store.dispatch('fetchPersonalAssets', {query: { owner: account.toLowerCase(), limit: 1000 }, transform: arr => arr.map(transformAsset)})
-    if (proxy !== null) {
-      store.dispatch('fetchProxyAssets', {query: { owner: proxy.toLowerCase(), limit: 1000 }, transform: arr => arr.map(transformAsset)})
+    if (account) {
+      store.dispatch('fetchPersonalAssets', {query: { owner: account.toLowerCase(), limit: 1000 }, transform: arr => arr.map(transformAsset)})
+      if (proxy !== null) {
+        store.dispatch('fetchProxyAssets', {query: { owner: proxy.toLowerCase(), limit: 1000 }, transform: arr => arr.map(transformAsset)})
+      }
     }
 
     prevNetwork = network

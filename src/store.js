@@ -139,7 +139,7 @@ const mutations = {
   setWeb3Provider: (state, provider) => {
     Vue.set(state.settings, 'web3Provider', provider)
     Vue.set(state, 'web3', {})
-    poll()
+    poll(true)
   },
   setWeb3Latency: (state, latency) => {
     Vue.set(state.web3, 'latency', latency)
