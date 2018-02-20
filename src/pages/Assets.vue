@@ -32,14 +32,16 @@
       </div>
       <div :style="containerStyle">
       <v-layout row wrap>
-        <v-flex v-for="(asset, index) in proxyAssets" xs12 md6 lg6 :key="index">
+        <v-flex v-for="(asset, index) in proxyAssets" xs12 xl6 :key="index">
           <router-link :to="'/assets/' + asset.hash">
-            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset" :schema="asset.schema" :menu="makeMenu(asset, true)"></asset>
+            <asset hover style="margin: 0 auto; margin-bottom: 1em; width: 300px; height: 350px;" :asset="asset" :schema="asset.schema" :menu="makeMenu(asset, true)"></asset>
           </router-link>
         </v-flex>
       </v-layout>
       </div>
     </v-flex>
+    <div class="hidden-md-and-up" style="height: 50px; width: 100%;">
+    </div>
     <v-flex xs12 md6>
       <div class="header">
       <div class="header-start">
@@ -53,9 +55,9 @@
       </div>
       <div :style="containerStyle">
       <v-layout row wrap>
-        <v-flex v-for="(asset, index) in personalAssets" xs12 md6 lg6 :key="index">
+        <v-flex v-for="(asset, index) in personalAssets" xs12 xl6 :key="index">
           <router-link :to="'/assets/' + asset.hash">
-            <asset hover style="margin: 0 auto; margin-bottom: 1em;" :asset="asset" :schema="asset.schema" :menu="makeMenu(asset, false)"></asset>
+            <asset hover style="margin: 0 auto; margin-bottom: 1em; width: 300px; height: 350px;" :asset="asset" :schema="asset.schema" :menu="makeMenu(asset, false)"></asset>
           </router-link>
         </v-flex>
       </v-layout>
@@ -66,9 +68,10 @@
 </template>
 
 <script>
-import Asset from '../components/Asset'
-
 import { encodeBuy, encodeCall } from 'wyvern-schemas'
+
+import Asset from '../components/Asset'
+import { web3 } from '../aux'
 
 export default {
   components: { Asset },

@@ -1,5 +1,5 @@
 <template>
-<v-card :hover="hover" raised style="height: 300px; width: 300px;">
+<v-card :hover="hover" raised style="height: 350px; width: 300px;">
   <div class="top">
     <span class="schema"><code>{{ schema ? schema.name : asset.schema }}</code></span>
     <v-btn class="url" @click.stop="navigate(metadata.url)" :href="metadata.url" target="_blank" flat>External URL</v-btn>

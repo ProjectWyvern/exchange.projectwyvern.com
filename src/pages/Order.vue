@@ -60,7 +60,7 @@ Order {{ hash }}
 </v-flex>
 <v-flex xs12 v-if="order">
 <router-link :to="'/assets/' + order.asset.hash">
-<asset style="margin: 0 auto;" :schema="schema" :asset="order.asset"></asset>
+<asset style="height: 350px; width: 300px; margin: 0 auto;" :schema="schema" :asset="order.asset"></asset>
 </router-link>
 </v-flex>
 <v-flex xs12 v-if="order && order.settlement">
@@ -76,7 +76,7 @@ Order {{ hash }}
 <v-flex xs12 v-if="order && !order.settlement">
 <div style="text-align: center; line-height: 4em;">
 <div class="saleInfo">
-<div class="side">{{ side }}</div>
+<div class="side">{{ side }} by <router-link :to="'/accounts/' + order.maker">{{ order.maker }}</router-link></div>
 <div class="expiry">{{ expiry }}</div>
 <div class="kind">{{ kind }}</div>
 <div v-if="price !== null" class="price">{{ price }} {{ token.symbol }}</div>
@@ -183,7 +183,7 @@ export default {
       return !this.order ? '' : (this.order.settlement ? moment(this.order.settlement.timestamp * 1000).fromNow() : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
     },
     side: function () {
-      return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For Purchase' : 'For Sale')
+      return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For purchase' : 'For sale')
     },
     price: function () {
       return this.token ? (this.order.settlement ? parseFloat(WyvernProtocol.toUnitAmount(this.order.settlement.price, this.token.decimals)) : (this.order && this.order.currentPrice ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null)) : null

@@ -2,22 +2,21 @@
 <div>
 <v-container grid-list-md>
   <v-layout row wrap>
-    <v-flex xs12 md4 lg3>
-      <v-text-field name="filter" label="Filter by title / description" v-model="filter" hide-details></v-text-field>
-    </v-flex>
-    <v-flex lg2 hidden-xs-only>
+    <v-flex lg3 hidden-xs-only>
     </v-flex>
     <v-flex xs12 md4 lg3>
-      <v-select style="margin: 0; width: 49%; display: inline-block;" autocomplete v-bind:items="schemas" v-model="schema" label="Schema" item-text="name" item-value="value" hide-details></v-select>
-      <v-select style="margin: 0; width: 49%; display: inline-block;" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-text="name" item-value="value" hide-details></v-select>
+      <v-select style="margin: 0; width: 49%; display: inline-block;" @change="dreload" autocomplete v-bind:items="schemas" v-model="schema" label="Schema" item-text="name" item-value="value" hide-details></v-select>
+      <v-select style="margin: 0; width: 49%; display: inline-block;" @change="dreload" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-text="name" item-value="value" hide-details></v-select>
     </v-flex>
     <v-flex xs12 md4 lg3>
-      <v-select style="margin: 0; width: 24%; display: inline-block;" v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address" autocomplete hide-details></v-select>
-      <v-select style="margin: 0; width: 24%; display: inline-block;" v-bind:items="sides" v-model="side" label="Side" item-text="name" item-value="value" hide-details></v-select>
-      <v-select style="width: 49%; display: inline-block;" v-bind:items="sorts" v-model="sort" label="Sort" item-text="name" item-value="id" hide-details></v-select>
+      <v-select style="margin: 0; width: 24%; display: inline-block;" @change="dreload" v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address" autocomplete hide-details></v-select>
+      <v-select style="margin: 0; width: 24%; display: inline-block;" @change="dreload" v-bind:items="sides" v-model="side" label="Side" item-text="name" item-value="value" hide-details></v-select>
+      <v-select style="width: 49%; display: inline-block;" @change="dreload" v-bind:items="sorts" v-model="sort" label="Sort" item-text="name" item-value="id" hide-details></v-select>
     </v-flex>
-    <v-flex xs12 md4 lg1>
-      <v-btn style="float: right;" @click.native="reload()" flat><v-icon>refresh</v-icon></v-btn>
+    <v-flex xs12 md4 lg3>
+      <v-btn @click.stop="reload" flat><v-icon>refresh</v-icon></v-btn>
+      <v-btn @click.stop="previous" flat :disabled="offset === 0">Previous Page</v-btn>
+      <v-btn @click.stop="next" flat>Next Page</v-btn>
     </v-flex>
   </v-layout>
 </v-container>
@@ -55,8 +54,32 @@ export default {
     this.reload()
   },
   methods: {
+    dreload: function () {
+      setTimeout(this.reload, 10)
+    },
+    next: function () {
+      this.offset += 100
+      this.reload()
+    },
+    previous: function () {
+      this.offset -= 100
+      this.reload()
+    },
     reload: function () {
-      this.$store.dispatch('fetchOrders', {query: {limit: 500}})
+      var query = {}
+      query.offset = this.offset
+      query.schema = this.schema
+      if (this.side !== -1) {
+        query.side = this.side
+      }
+      if (this.token) {
+        query.paymentToken = this.token
+      }
+      if (this.saleKind !== -1) {
+        query.saleKind = this.saleKind
+      }
+      query.order = this.sort
+      this.$store.dispatch('fetchOrders', {query: query})
     }
   },
   watch: {
@@ -65,12 +88,12 @@ export default {
     saleKind: bind('saleKind'),
     sort: bind('sort'),
     schema: bind('schema'),
-    filter: bind('filter')
+    offset: bind('offset')
   },
   data: function () {
     const query = this.$route.query
     return {
-      filter: query.filter ? query.filter : null,
+      offset: query.offset ? parseInt(query.offset) : 0,
       side: query.side ? parseInt(query.side) : -1,
       sides: [
         {name: 'Any', value: -1},
@@ -84,12 +107,12 @@ export default {
         {name: 'Fixed Price', value: 0},
         {name: 'Dutch Auction', value: 1}
       ],
-      sort: query.sort ? parseInt(query.sort) : 0,
+      sort: query.sort ? parseInt(query.sort) : 1,
       sorts: [
-        {name: 'Most Recent', id: 0},
-        {name: 'Least Recent', id: 1},
-        {name: 'Highest Price', id: 2},
-        {name: 'Lowest Price', id: 3}
+        {name: 'Most Recent', id: 1},
+        {name: 'Least Recent', id: 2},
+        {name: 'Highest Price', id: 3},
+        {name: 'Lowest Price', id: 4}
       ],
       schema: query.schema ? query.schema : null
     }
@@ -110,25 +133,7 @@ export default {
         const schema = this.$store.state.web3.schemas.filter(s => s.name === o.metadata.schema)[0]
         o.schema = schema
         return o
-      }).filter(o => {
-        return (
-          (this.schema === null || o.schema.name === this.schema) &&
-          (this.token === null || o.paymentToken === this.token) &&
-          (this.saleKind === -1 || o.saleKind === this.saleKind) &&
-          (this.side === -1 || o.side === this.side) &&
-          (this.filter === null || o.asset.formatted.title.toLowerCase().indexOf(this.filter.toLowerCase()) !== -1)
-        )
       })
-      if (orders !== null) {
-        orders.sort((x, y) => {
-          switch (this.sort) {
-            case 0: return x.listingTime > y.listingTime ? -1 : 1
-            case 1: return x.listingTime > y.listingTime ? 1 : -1
-            case 2: return x.basePrice > y.basePrice ? -1 : 1
-            case 3: return x.basePrice > y.basePrice ? 1 : -1
-          }
-        })
-      }
       return orders
     },
     maxHeight: function () {

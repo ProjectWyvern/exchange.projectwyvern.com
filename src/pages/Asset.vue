@@ -10,7 +10,7 @@ Asset {{ hash }}
 </div>
 </v-flex>
 <v-flex xs12 v-if="asset">
-<asset style="margin: 0 auto;" :schema="schema" :asset="asset"></asset>
+<asset style="margin: 0 auto; width: 300px;" :schema="schema" :asset="asset"></asset>
 <br />
 <div class="owner" style="text-align: center;">Owned by <router-link :to="'/accounts/' + asset.owner">{{ asset.owner }}</router-link></div>
 </v-flex>

@@ -13,10 +13,12 @@ import store from './store.js'
 
 import '../node_modules/vuetify/dist/vuetify.min.css'
 
-Raven
-  .config('https://c5992182b66541be9012ab71cbe0acd0@sentry.io/290797')
-  .addPlugin(RavenVue, Vue)
-  .install()
+if (process.env.NODE_ENV !== 'development') {
+  Raven
+    .config('https://c5992182b66541be9012ab71cbe0acd0@sentry.io/290797')
+    .addPlugin(RavenVue, Vue)
+    .install()
+}
 
 Vue.use(AsyncComputed)
 Vue.use(VueRouter)

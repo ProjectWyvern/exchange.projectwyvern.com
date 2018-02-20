@@ -1,7 +1,7 @@
 <template>
-<v-card :hover="hover" raised style="height: 330px; width: 330px;">
+<v-card :hover="hover" raised style="height: 400px; width: 350px;">
   <div style="height: 15px;"></div>
-  <asset class="elevation-0" :schema="schema" :asset="asset || order.asset" style="margin-left: 15px;"></asset>
+  <asset class="elevation-0" style="height: 350px; width: 300px; margin-left: 15px;" :schema="schema" :asset="asset || order.asset"></asset>
   <div class="saleInfoOuter">
     <div class="saleInfo">
     <div class="side">{{ side }}</div>

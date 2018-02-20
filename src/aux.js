@@ -288,10 +288,9 @@ export const bind = (store) => {
         gasPrice: store.state.settings.gasPrice
       })
       schemas = WyvernSchemas.schemas[network]
-      window.formatters = {}
       schemas.map(s => {
-        s.formatter = cachedAsync(s.formatter, 'schema:formatter:' + s.name)
-        window.formatters[s.name] = s.formatter
+        const func = s.formatter
+        s.formatter = (asset) => cachedAsync((asset) => func(asset, web3), 'schema:formatter:' + s.name)(asset)
       })
       store.commit('setWeb3Schemas', schemas)
       tokens = WyvernSchemas.tokens[network]

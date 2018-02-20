@@ -85,7 +85,7 @@
       Configure order parameters, the conditions under which you will buy or sell the asset in question.
       </div><br />
       <v-select prepend-icon="compare_arrows" style="max-width: 400px;" v-bind:items="saleKinds" v-model="saleKind" label="Method of sale" item-value="value" item-text="text"></v-select>
-      <v-select prepend-icon="account_balance_wallet" style="max-width: 400px;" v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address"></v-select>
+      <v-select prepend-icon="account_balance_wallet" style="max-width: 400px;" autocomplete v-bind:items="tokens" v-model="token" label="Token" item-text="symbol" item-value="address"></v-select>
       <v-text-field prepend-icon="payment" style="max-width: 400px;" v-model="amount" :label="saleKind === 0 ? 'Price (tokens)': 'Starting price (tokens)'"></v-text-field>
       <v-text-field v-if="saleKind === 1" prepend-icon="publish" style="max-width: 400px;" v-model="endingPrice" label="Ending price (tokens)"></v-text-field>
       <v-menu style="max-width: 400px;" lazy :close-on-content-click="false" v-model="dateMenu" transition="scale-transition" offset-y full-width :nudge-right="40" max-width="290px" min-width="290px">

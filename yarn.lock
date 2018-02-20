@@ -7283,6 +7283,10 @@ type-is@~1.6.15:
     media-typer "0.3.0"
     mime-types "~2.1.18"
 
+typed-promisify@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/typed-promisify/-/typed-promisify-0.4.0.tgz#ade1d3d32130767ba4ef5385162c720698105d0f"
+
 typedarray@^0.0.6, typedarray@~0.0.5:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
@@ -7930,9 +7934,9 @@ wyvern-js@0.1.1:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
-wyvern-schemas@^0.1.9:
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.1.9.tgz#b95a61645f4913a746fab2b1134680ec3865f3f0"
+wyvern-schemas@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.2.5.tgz#3b62cc20e157e9a9d2dceeb9fbd804733f09a8a6"
   dependencies:
     axios "^0.17.1"
     babel-cli "^6.26.0"
@@ -7940,6 +7944,7 @@ wyvern-schemas@^0.1.9:
     babel-plugin-transform-runtime "^6.23.0"
     babel-preset-env "^1.6.1"
     js-yaml "^3.10.0"
+    typed-promisify "^0.4.0"
 
 xdg-basedir@^3.0.0:
   version "3.0.0"

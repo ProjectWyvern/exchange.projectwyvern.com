@@ -2,13 +2,17 @@
 <v-container>
 <v-layout row wrap>
 <v-flex xs12>
-<v-layout row wrap>
+<v-layout row wrap style="margin-bottom: 1em;">
+  <v-flex md3 hidden-xs-only></v-flex>
   <v-flex xs12 md6>
-    <v-text-field style="margin-left: 2em; max-width: 400px;" v-model="filter" label="Filter by title or description" name="filter"></v-text-field>
+    <v-select style="margin: 0; width: 33%; display: inline-block;" @change="(schema) => reload(schema, undefined)" autocomplete v-bind:items="schemas" v-model="schema" label="Schema" item-text="name" item-value="value" hide-details></v-select>
+    <v-select style="width: 33%; display: inline-block;" @change="(sort) => reload(undefined, sort)" v-bind:items="sorts" v-model="sort" label="Sort" item-text="name" item-value="id" hide-details></v-select>
+    <div style="float: right;">
+      <v-btn @click.stop="previous" flat :disabled="offset === 0">Previous Page</v-btn>
+      <v-btn @click.stop="next" flat>Next Page</v-btn>
+    </div>
   </v-flex>
-  <v-flex xs12 md6>
-<v-select style="margin: 0; width: 49%; display: inline-block;" @change="reload" autocomplete v-bind:items="schemas" v-model="schema" label="Schema" item-text="name" item-value="value" hide-details></v-select>
-  </v-flex>
+  <v-flex md3 hidden-xs-only></v-flex>
 </v-layout>
 </v-flex>
 <v-flex xs12 v-if="assets">
@@ -45,9 +49,14 @@ export default {
   data: function () {
     const query = this.$route.query
     return {
-      filter: '',
       assetResult: null,
-      schema: query.schema ? query.schema : null
+      offset: query.offset ? parseInt(query.offset) : 0,
+      schema: query.schema ? query.schema : null,
+      sort: query.sort ? parseInt(query.sort) : 1,
+      sorts: [
+        {name: 'Most Recent', id: 1},
+        {name: 'Least Recent', id: 2}
+      ]
     }
   },
   created: function () {
@@ -63,24 +72,35 @@ export default {
       return window.innerHeight - 240
     },
     assets: function () {
-      return !this.assetResult ? null : this.assetResult.filter(a => {
-        return a.formatted.title.indexOf(this.filter) !== -1
-      })
+      return this.assetResult
     }
   },
   methods: {
-    reload: async function (schema) {
+    reload: async function (schema, sort) {
       this.assetResult = null
       var query = {}
       if (this.schema) query.schema = this.schema
       if (schema) query.schema = schema
       if (schema === null) delete query.schema
-      query.limit = 1000
+      if (this.sort) query.order = this.sort
+      if (sort) query.order = sort
+      query.limit = 100
+      query.offset = this.offset
       this.assetResult = await wyvernExchange.assets(query)
+    },
+    next: function () {
+      this.offset += 100
+      this.reload()
+    },
+    previous: function () {
+      this.offset -= 100
+      this.reload()
     }
   },
   watch: {
-    schema: bind('schema')
+    schema: bind('schema'),
+    sort: bind('sort'),
+    offset: bind('offset')
   }
 }
 </script>
