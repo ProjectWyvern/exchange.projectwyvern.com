@@ -7,7 +7,7 @@
 This is a live beta running on the Ethereum mainnet. The protocol <a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/master/audits/v1/solidified_audit_report.pdf" target="_blank">has been audited</a> and subjected to a <a href="https://medium.com/project-wyvern/wyvern-protocol-bug-bounty-5k-65c0f8d9998e" target="_blank">public bounty</a>, so it should be solid, but there may be a few UI/UX bugs. Please report issues and send feedback <a href="https://discord.gg/dZZdybs" target="_blank">on Discord</a>.
 </v-alert><br />
 <v-alert class="alert" icon="help" value="true" outline :style="style">
-Not sure what the Wyvern Exchange is or want the ELI5 overview? Read the <a href="" target="_blank">launch announcement</a>.
+Not sure what the Wyvern Exchange is or want the ELI5 overview? Read the <a href="https://medium.com/project-wyvern/announcing-the-wyvern-exchange-any-ethereum-asset-any-erc20-token-zero-trust-required-34577c67954d" target="_blank">launch announcement</a>.
 </v-alert>
 </p><br />
 </v-flex xs12>

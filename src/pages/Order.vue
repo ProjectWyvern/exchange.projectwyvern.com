@@ -151,7 +151,7 @@ export default {
       const sell = this.order.side === 0 ? this.orderToMatch : this.order
       const onTxHash = (txHash) => { this.matchTx = txHash }
       const onConfirm = () => { this.matched = true; this.$store.dispatch('fetchOrder', { hash: this.hash }) }
-      const onError = () => { this.simulationFailed = true }
+      const onError = (err) => { console.log(err); this.simulationFailed = true }
       this.matching = true
       this.matched = false
       this.simulationFailed = false
@@ -222,7 +222,7 @@ export default {
         paymentToken: this.order.paymentToken,
         basePrice: this.order.basePrice,
         extra: 0,
-        listingTime: new BigNumber(Math.round(Date.now() / 1000)),
+        listingTime: new BigNumber(Math.round(Date.now() / 1000 - 1000)),
         expirationTime: 0,
         salt: WyvernProtocol.generatePseudoRandomSalt(),
         metadata: {}

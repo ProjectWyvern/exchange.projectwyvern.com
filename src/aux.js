@@ -183,6 +183,48 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
     sell.s = buy.s
   }
 
+  /*
+  const buyValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken],
+    [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
+    buy.side,
+    buy.saleKind,
+    buy.howToCall,
+    buy.calldata,
+    buy.replacementPattern,
+    buy.staticExtradata,
+    buy.v, buy.r, buy.s,
+    { from: account })
+  console.log('buyValid', buyValid)
+  const sellValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
+    [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+    [sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+    sell.side,
+    sell.saleKind,
+    sell.howToCall,
+    sell.calldata,
+    sell.replacementPattern,
+    sell.staticExtradata,
+    sell.v, sell.r, sell.s,
+    { from: account })
+  console.log('sellValid', sellValid)
+  const ordersCanMatch = await protocolInstance.wyvernExchange.ordersCanMatch_.callAsync(
+    [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+    [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+    [buy.side, buy.saleKind, buy.howToCall, sell.side, sell.saleKind, sell.howToCall],
+    buy.calldata,
+    sell.calldata,
+    buy.replacementPattern,
+    sell.replacementPattern,
+    buy.staticExtradata,
+    sell.staticExtradata,
+    { from: account }
+  )
+  console.log('ordersCanMatch', ordersCanMatch)
+  const orderCalldataCanMatch = await protocolInstance.wyvernExchange.orderCalldataCanMatch.callAsync(buy.calldata, buy.replacementPattern, sell.calldata, sell.replacementPattern)
+  console.log('orderCalldataCanMatch', orderCalldataCanMatch)
+  */
+
   const txHash = await protocolInstance.wyvernExchange.atomicMatch_.sendTransactionAsync(
     [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
     [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt, sell.makerFee, sell.takerFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
@@ -194,7 +236,7 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
     buy.staticExtradata,
     sell.staticExtradata,
     [buy.v, sell.v],
-    [buy.r, buy.s, sell.r, sell.s],
+    [buy.r, buy.s, sell.r, sell.s, '0x0000000000000000000000000000000000000000000000000000000000000000'],
     { from: account }
   )
   commit('commitTx', { txHash: txHash })

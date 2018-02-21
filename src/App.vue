@@ -1,6 +1,6 @@
 <template>
 <v-app id="app" :dark="nightMode">
-  <v-navigation-drawer fixed clipped app v-model="drawerLeft" class="drawerLeft" width="200">
+  <v-navigation-drawer disable-resize-watcher fixed clipped app v-model="drawerLeft" class="drawerLeft" width="200">
     <v-list dense>
       <template v-for="(l, i) in links">
         <v-subheader v-if="l.banner" class="banner">{{ l.banner }}</v-subheader>
