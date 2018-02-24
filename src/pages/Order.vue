@@ -73,7 +73,7 @@ Order {{ hash }}
 </v-flex>
 <v-flex xs12 v-if="order">
 <router-link :to="'/assets/' + order.asset.hash">
-<asset style="height: 350px; width: 300px; margin: 0 auto;" :schema="schema" :asset="order.asset"></asset>
+<asset style="width: 300px; margin: 0 auto;" :schema="schema" :asset="order.asset"></asset>
 </router-link>
 </v-flex>
 <v-flex xs12 v-if="order && order.settlement">
