@@ -5,20 +5,33 @@
     <v-card-title style="font-variant: small-caps; font-size: 1.4em;">
       Matching Order
     </v-card-title>
-    <v-card-text v-if="matched">
-      <v-icon style="color: green; margin-left: 10px; margin-right: 10px;">
-      check_circle
-      </v-icon>
-      {{ order.asset.formatted.title }} has been transferred.<br />
-      Asset pages may take a few seconds to update.
-    </v-card-text>
-    <v-card-text v-else-if="simulationFailed">
-      Transaction rejected or match simulation failed - check that you have enabled the specified token and that you have sufficient available balance.
-    </v-card-text>
-    <v-card-text v-else-if="matching">
-      <v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-if="matching && !matched" v-bind:indeterminate="true"></v-progress-circular> 
-      <div v-if="!matchTx" style="margin-top: 1em; margin-left: 1em;">You will need to approve the transaction.</div><br />
-      <v-btn v-if="matchTx" target="_blank" :href="getUrl(matchTx)" style="margin-top: 2em;">View Transaction</v-btn>
+    <v-card-text>
+      <div>
+        <v-progress-circular v-bind:size="20" style="margin-left: 10px; margin-right: 10px; top: 5px;" v-if="matchStage === 'checking' && !checkFailed" v-bind:indeterminate="true"></v-progress-circular>
+        <v-icon v-if="matchStage === 'checking' && checkFailed" style="color: red; margin-left: 10px; margin-right: 10px;">error</v-icon>
+        <v-icon v-if="matchStage !== 'checking'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
+        <span v-if="!checkError">Checking order parameters and token balances...</span>
+        <span v-if="checkError">{{ checkError }}</span>
+      </div>
+      <br />
+      <div v-if="matchStage !== 'checking'">
+        <v-progress-circular v-bind:size="20" style="margin-left: 10px; margin-right: 10px; top: 5px;" v-if="matchStage === 'simulating' && !simulationFailed" v-bind:indeterminate="true"></v-progress-circular>
+        <v-icon v-if="matchStage === 'simulating' && simulationFailed" style="color: red; margin-left: 10px; margin-right: 10px;">error</v-icon>
+        <v-icon v-if="matchStage === 'matching' || matchStage === 'settled'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
+        <span v-if="!simulationFailed">Simulating order settlement...</span>
+        <span v-if="simulationFailed">Match simulation failed. Order may have already been matched.</span>
+      </div>
+      <br />
+      <div v-if="matchStage === 'matching' || matchStage === 'settled'">
+        <v-progress-circular v-bind:size="20" style="margin-left: 10px; margin-right: 10px; top: 5px;" v-if="matchStage === 'matching'" v-bind:indeterminate="true"></v-progress-circular>
+        <v-icon v-if="matchStage === 'settled'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
+        <span v-if="matchStage === 'matching'">
+          Matching order...
+          <span v-if="!matchTx">You will need to approve the transaction.</span>
+          <v-btn flat v-if="matchTx" target="_blank" :href="getUrl(matchTx)" style="">View Transaction</v-btn>
+        </span>
+        <span v-if="matchStage === 'settled'">{{ order.asset.formatted.title }} has been transferred.</span>
+      </div>
     </v-card-text>
     <v-card-actions>
       <v-btn color="primary" flat @click.stop="matchDialog = false">Close</v-btn>
@@ -123,6 +136,7 @@ export default {
   data: function () {
     return {
       matchDialog: false,
+      matchStage: null,
       matchTx: null,
       cancelDialog: false,
       cancelTx: null,
@@ -130,8 +144,8 @@ export default {
       cancelling: false,
       cancelled: false,
       simulationFailed: false,
-      matching: false,
-      matched: false,
+      checkFailed: false,
+      checkError: null,
       hash: this.$route.params.hash
     }
   },
@@ -149,14 +163,15 @@ export default {
     match: function () {
       const buy = this.order.side === 0 ? this.order : this.orderToMatch
       const sell = this.order.side === 0 ? this.orderToMatch : this.order
-      const onTxHash = (txHash) => { this.matchTx = txHash }
-      const onConfirm = () => { this.matched = true; this.$store.dispatch('fetchOrder', { hash: this.hash }) }
+      const onCheck = (ok, err) => { this.checkFailed = !ok; if (!err) this.matchStage = 'simulating'; this.checkError = err }
+      const onTxHash = (txHash) => { this.matchStage = 'matching'; this.matchTx = txHash }
+      const onConfirm = (success) => { this.matchStage = 'settled'; this.$store.dispatch('fetchOrder', { hash: this.hash }) }
       const onError = (err) => { console.log(err); this.simulationFailed = true }
-      this.matching = true
-      this.matched = false
+      this.matchStage = 'checking'
       this.simulationFailed = false
+      this.checkFailed = false
       this.matchDialog = true
-      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onError: onError, onTxHash: onTxHash, onConfirm: onConfirm })
+      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onCheck: onCheck, onError: onError, onTxHash: onTxHash, onConfirm: onConfirm })
     },
     getUrl: function (hash) {
       const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')

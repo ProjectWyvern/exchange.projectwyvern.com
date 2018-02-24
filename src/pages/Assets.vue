@@ -71,7 +71,6 @@
 import { encodeBuy, encodeCall } from 'wyvern-schemas'
 
 import Asset from '../components/Asset'
-import { web3 } from '../aux'
 
 export default {
   components: { Asset },

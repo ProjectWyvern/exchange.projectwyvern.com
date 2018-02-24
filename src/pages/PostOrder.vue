@@ -235,7 +235,7 @@ export default {
         paymentToken: this.token,
         basePrice: this.amount !== null ? WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), token.decimals) : null,
         extra: WyvernProtocol.toBaseUnitAmount(new BigNumber(this.extra), token.decimals),
-        listingTime: new BigNumber(Math.round(Date.now() / 1000)),
+        listingTime: new BigNumber(Math.round(Date.now() / 1000 - 100)),
         expirationTime: new BigNumber(this.expiration),
         salt: WyvernProtocol.generatePseudoRandomSalt(),
         metadata: this.metadata

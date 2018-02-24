@@ -168,7 +168,7 @@ const cancelOrder = async ({ state, commit }, { order, onTxHash, onConfirm }) =>
   })
 }
 
-const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, onConfirm }) => {
+const atomicMatch = async ({ state, commit }, { buy, sell, onError, onCheck, onTxHash, onConfirm }) => {
   const accounts = await promisify(web3.eth.getAccounts)
   const account = accounts[0]
 
@@ -183,7 +183,37 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
     sell.s = buy.s
   }
 
-  /*
+  if (buy.maker.toLowerCase() === account.toLowerCase()) {
+    const required = buy.basePrice /* no buy-side auctions for now */
+    var balance = await promisify(c => web3.eth.call({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'balanceOf'), [account])}, c))
+    balance = new BigNumber(balance)
+    if (balance < required) {
+      if (buy.paymentToken === state.web3.tokens.canonicalWrappedEther.address) return onCheck(false, 'Insufficient balance. You may need to wrap Ether.')
+      else return onCheck(false, 'Insufficient balance.')
+    }
+    var approved = await promisify(c => web3.eth.call({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'allowance'), [account, WyvernProtocol.getExchangeContractAddress(state.web3.base.network)])}, c))
+    approved = new BigNumber(approved)
+    if (approved < required) {
+      onCheck(true, 'You must approve this token for use.')
+      const txHash = await promisify(c => web3.eth.sendTransaction({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'approve'), [WyvernProtocol.getExchangeContractAddress(state.web3.base.network), WyvernProtocol.MAX_UINT_256.toString()])}, c))
+      onCheck(true, 'Waiting for approval transaction to confirm...')
+      commit('commitTx', { txHash })
+      return promisify(c => {
+        track(txHash, async success => {
+          commit('mineTx', { txHash, success })
+          if (success) {
+            try {
+              await atomicMatch({ state, commit }, { buy, sell, onError, onCheck, onTxHash, onConfirm })
+              c(null, null)
+            } catch (err) {
+              c(err, null)
+            }
+          }
+        })
+      })
+    }
+  }
+
   const buyValid = await protocolInstance.wyvernExchange.validateOrder_.callAsync(
     [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken],
     [buy.makerFee, buy.takerFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
@@ -223,7 +253,8 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onTxHash, on
   console.log('ordersCanMatch', ordersCanMatch)
   const orderCalldataCanMatch = await protocolInstance.wyvernExchange.orderCalldataCanMatch.callAsync(buy.calldata, buy.replacementPattern, sell.calldata, sell.replacementPattern)
   console.log('orderCalldataCanMatch', orderCalldataCanMatch)
-  */
+
+  onCheck(buyValid && sellValid && ordersCanMatch)
 
   const txHash = await protocolInstance.wyvernExchange.atomicMatch_.sendTransactionAsync(
     [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
