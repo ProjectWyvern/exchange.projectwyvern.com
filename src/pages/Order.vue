@@ -261,7 +261,7 @@ export default {
 }
 
 .saleInfo a {
-  color: blue;
+  color: #E12D32;
 }
 
 .saleInfo a:hover {

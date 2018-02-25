@@ -21,6 +21,6 @@ a:hover {
 }
 
 a { 
-  color: blue;
+  color: #E12D32;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
 <v-container>
 <v-layout row wrap>
-<v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center;">
+<v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center; font-variant: small-caps; font-size: 1.5em;">
 Account History (settled orders)
 </v-flex>
 <v-flex v-if="orders" xs12>
@@ -55,7 +55,7 @@ export default {
   },
   computed: {
     maxHeight: function () {
-      return window.innerHeight - 210
+      return window.innerHeight - 250
     }
   }
 }

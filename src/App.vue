@@ -12,7 +12,7 @@
               <v-icon :style="iconStyle">{{ l.icon }}</v-icon>
             </v-list-tile-avatar>
             <v-list-tile-content>
-              <v-list-tile-title style="font-size: 1.2em;">
+              <v-list-tile-title :style="{fontSize: '1.2em'}">
               {{ l.name }}
               </v-list-tile-title>
             </v-list-tile-content>
@@ -81,7 +81,7 @@ export default {
   },
   methods: {
     updateNightMode: function (nightMode) {
-      this.$vuetify.theme.primary = nightMode ? '#777' : '#444'
+      this.$vuetify.theme.primary = nightMode ? '#ccc' : '#444'
     }
   },
   created: function () {
@@ -157,13 +157,13 @@ export default {
         { name: 'Accounts', icon: 'people', path: '/accounts' },
         { name: 'Schemas', icon: 'developer_board', path: '/schemas' },
         { divider: true },
-        { section: 'Account' },
+        { section: 'My Account' },
         { name: 'Orders', icon: 'queue', path: '/account/orders' },
         { name: 'Assets', icon: 'domain', path: '/account/assets' },
         { name: 'Balances', icon: 'account_balance_wallet', path: '/account/balances' },
         { name: 'History', icon: 'history', path: '/account/history' },
         { divider: true },
-        { section: 'Exchange' },
+        { section: 'Miscellaenous' },
         { name: 'Stats', icon: 'graphic_eq', path: '/stats' },
         { name: 'About', icon: 'info', path: '/about' },
         { name: 'Help', icon: 'help', path: '/help' }
@@ -250,10 +250,6 @@ a:hover {
 }
 
 #app {
-}
-
-.footer {
-  margin-left: 1em;
 }
 
 .banner {

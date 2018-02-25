@@ -91,7 +91,7 @@ export default {
 }
 
 a {
-  color: blue;
+  color: #E12D32;
 }
 
 .progress {

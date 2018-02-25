@@ -1,7 +1,7 @@
 <template>
 <v-container>
 <v-layout row wrap>
-<v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center;">
+<v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center; font-variant: small-caps; font-size: 1.5em;">
 Active Orders
 </v-flex>
 <v-flex v-if="orders" xs12>

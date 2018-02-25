@@ -85,7 +85,7 @@ export default {
 
 <style scoped>
 .owner a { 
-  color: blue;
+  color: #E12D32;
 }
 
 .owner a:hover {
