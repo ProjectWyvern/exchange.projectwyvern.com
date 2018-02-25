@@ -118,7 +118,7 @@ export default {
     },
     unwrap: function () {
       const amount = WyvernProtocol.toBaseUnitAmount(new BigNumber(this.amount), 18)
-      const calldata = encodeCall(method(CanonicalWETH, 'withdraw'), [amount])
+      const calldata = encodeCall(method(CanonicalWETH, 'withdraw'), [amount.toString()])
       this.$store.dispatch('rawSend', { target: this.tokens.canonicalWrappedEther.address, data: calldata, amount: 0, onTxHash: console.log, onError: console.log, onConfirm: console.log })
     },
     approve: function (token) {
