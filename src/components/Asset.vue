@@ -2,16 +2,16 @@
 <v-card :hover="hover" raised style="height: 350px; width: 300px; overflow: hidden;">
   <div class="top">
     <span class="schema"><code>{{ schema ? schema.name : asset.schema }}</code></span>
-    <v-btn class="url" @click.stop="navigate(metadata.url)" :href="metadata.url" target="_blank" flat>External URL</v-btn>
+    <v-btn class="url" @click.stop="metadata ? navigate(metadata.url) : (() => {})" :href="metadata ? metadata.url : '#'" target="_blank" flat>External URL</v-btn>
   </div>
-  <v-card-media :src="metadata.thumbnail" height="150px" class="media" :contain="true">
+  <v-card-media :src="metadata ? metadata.thumbnail : ''" height="150px" class="media" :contain="true">
   </v-card-media>
   <v-card-title primary-title>
     <div style="width: 80%;">
       <div style="width: 100%;">
-        <h3 style="display: inline-block;">{{ metadata.title }}</h3>
+        <h3 style="display: inline-block;">{{ metadata ? metadata.title : '' }}</h3>
       </div>
-      <div style="font-size: 0.9em; max-width: 100%; word-wrap: break-word;">{{ metadata.description }}</div><br />
+      <div style="font-size: 0.9em; max-width: 100%; word-wrap: break-word;">{{ metadata ? metadata.description : '' }}</div><br />
     </div>
     <v-menu bottom left v-if="menu">
       <v-btn icon slot="activator" @click.prevent>

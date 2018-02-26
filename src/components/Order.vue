@@ -6,7 +6,7 @@
     <div class="saleInfo">
     <div class="side">{{ side }}</div>
     <div class="kind">{{ kind }}</div>
-    <div class="price">{{ price }} {{ token.symbol }}</div>
+    <div class="price">{{ price }} {{ token ? token.symbol : '' }}</div>
     <div class="expiry">{{ expiry }}</div>
     </div>
   </div>
