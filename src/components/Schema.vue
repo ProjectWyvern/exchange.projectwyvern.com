@@ -1,6 +1,6 @@
 <template>
 <v-card :hover="hover" raised style="width: 300px; padding: 5px; margin: 5px;" :height="expand ? '350' : '300'">
-  <v-card-media :src="schema.thumbnail" height="200px">
+  <v-card-media :src="schema.thumbnail" height="200px" :contain="true">
   </v-card-media>
   <v-card-title>
     <h3>{{ schema.name }}</h3>

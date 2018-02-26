@@ -4,7 +4,7 @@
     <span class="schema"><code>{{ schema ? schema.name : asset.schema }}</code></span>
     <v-btn class="url" @click.stop="navigate(metadata.url)" :href="metadata.url" target="_blank" flat>External URL</v-btn>
   </div>
-  <v-card-media :src="metadata.thumbnail" height="150px" class="media" contain="false">
+  <v-card-media :src="metadata.thumbnail" height="150px" class="media" :contain="true">
   </v-card-media>
   <v-card-title primary-title>
     <div style="width: 80%;">
