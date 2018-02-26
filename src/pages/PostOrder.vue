@@ -74,7 +74,8 @@
       </div><br />
       <div>
         <div v-for="(field, index) in fields" :key="index">
-          <v-text-field @input="unifyValues(); valueChange()" v-model="values[field.name]" style="max-width: 600px;" :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" :readonly="field.readOnly"></v-text-field>
+          <v-select v-if="field.type === 'enum'" @input="unifyValues(); valueChange()" v-model="values[field.name]" :items="field.values.map(v => ({value: v}))" item-value="value" item-text="value" single-line bottom :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" autocomplete></v-select>
+          <v-text-field v-if="field.type !== 'enum'" @input="unifyValues(); valueChange()" v-model="values[field.name]" style="max-width: 600px;" :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" :readonly="field.readOnly"></v-text-field>
         </div>
       </div>
       <v-btn color="primary" @click.native="step = 4">Continue</v-btn>
@@ -213,6 +214,8 @@ export default {
       return this.saleKind === 0 ? 0 : Math.abs(this.amount - this.endingPrice)
     },
     order: function () {
+      console.log(this.values)
+      try {
       const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
       const token = this.tokens.filter(t => t.address === this.token)[0]
       const asset = this.schema.assetFromFields(this.values)
@@ -241,6 +244,7 @@ export default {
         metadata: this.metadata
       }
       return order
+      } catch (err) { console.log(err) }
     },
     metadata: function () {
       return {

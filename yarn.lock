@@ -425,13 +425,7 @@ async-each@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/async-each/-/async-each-1.0.1.tgz#19d386a1d9edc6e7c1c85d388aedbcc56d33602d"
 
-async-eventemitter@^0.2.2:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/async-eventemitter/-/async-eventemitter-0.2.4.tgz#f5e7c8ca7d3e46aab9ec40a292baf686a0bafaca"
-  dependencies:
-    async "^2.4.0"
-
-async-eventemitter@ahultgren/async-eventemitter#fa06e39e56786ba541c180061dbf2c0a5bbf951c:
+async-eventemitter@^0.2.2, async-eventemitter@ahultgren/async-eventemitter#fa06e39e56786ba541c180061dbf2c0a5bbf951c:
   version "0.2.3"
   resolved "https://codeload.github.com/ahultgren/async-eventemitter/tar.gz/fa06e39e56786ba541c180061dbf2c0a5bbf951c"
   dependencies:
@@ -8353,9 +8347,9 @@ wyvern-js@0.1.1:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
-wyvern-schemas@^0.2.12:
-  version "0.2.12"
-  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.2.12.tgz#ebdee153fc7fe17d4025a45ecb78971eb83a39ee"
+wyvern-schemas@^0.3.2:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.3.2.tgz#a38fafdd179fb173e90c812dcda5e9aa539e8e7d"
   dependencies:
     axios "^0.17.1"
     babel-cli "^6.26.0"
