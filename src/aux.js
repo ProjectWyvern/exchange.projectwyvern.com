@@ -509,6 +509,39 @@ export const bind = (store) => {
       store.commit('setWeb3Balances', balances)
     }
 
+    {
+      /* This is very Ethercraft-specific. */
+      const assets = await Promise.all(schemas.filter(s => s.functions.countOf).map(async s => {
+        const countOf = s.functions.countOf
+        const schemaAssets = await Promise.all(s.allAssets.map(async asset => {
+          var proxyCount = 0
+          var myCount = 0
+          const abi = countOf(asset)
+          const contract = web3.eth.contract([abi]).at(abi.target)
+          if (proxy) {
+            proxyCount = await promisify(c => contract[abi.name].call([proxy], c))
+            proxyCount = proxyCount.toNumber()
+          }
+          myCount = await promisify(c => contract[abi.name].call([account], c))
+          myCount = myCount.toNumber()
+          myCount /= 1000000000000000000
+          proxyCount /= 1000000000000000000
+          myCount = Math.floor(myCount)
+          proxyCount = Math.floor(proxyCount)
+          var assets = []
+          if (myCount > 0 || proxyCount > 0) {
+            const formatted = await s.formatter(asset)
+            const hash = WyvernProtocol.getAssetHashHex(s.hash(asset), s.name)
+            for (var i = 0; i < myCount; i++) assets.push({proxy: false, asset: asset, schema: s, formatted: formatted, hash: hash})
+            for (i = 0; i < proxyCount; i++) assets.push({proxy: true, asset: asset, schema: s, formatted: formatted, hash: hash})
+          }
+          return assets
+        }))
+        return [].concat(...schemaAssets)
+      }))
+      store.commit('setWeb3Assets', [].concat(...assets))
+    }
+
     const end = Date.now() / 1000
     const diff = end - start
     logger.debug({extra: {latency: latency, diff: diff}}, 'Reloaded web3 state')

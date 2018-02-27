@@ -152,14 +152,17 @@ export default {
         overflow: 'auto'
       }
     },
+    web3Assets: function () {
+      return this.$store.state.web3.assets || []
+    },
     personalAssets: function () {
-      return this.$store.state.personalAssets.filter(a => {
+      return this.$store.state.personalAssets.concat(...this.web3Assets.filter(x => !x.proxy)).filter(a => {
         const title = a.formatted.title.toLowerCase()
         return title.indexOf(this.personalFilter.toLowerCase()) !== -1
       })
     },
     proxyAssets: function () {
-      return this.$store.state.proxyAssets.filter(a => {
+      return this.$store.state.proxyAssets.concat(...this.web3Assets.filter(x => x.proxy)).filter(a => {
         const title = a.formatted.title.toLowerCase()
         return title.indexOf(this.exchangeFilter.toLowerCase()) !== -1
       })
