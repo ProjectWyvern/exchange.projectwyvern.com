@@ -77,7 +77,7 @@ export default {
       return parseFloat(WyvernProtocol.toUnitAmount(order.settlement ? order.settlement.price : order.basePrice, this.token(order).decimals))
     },
     when: function (order) {
-      return order.settlement ? moment(order.settlement.timestamp * 1000).fromNow() : '(active)'
+      return order.settlement ? moment(order.settlement.timestamp * 1000).fromNow() : (order.cancelledOrFinalized ? '(cancelled)' : '(active)')
     }
   }
 }

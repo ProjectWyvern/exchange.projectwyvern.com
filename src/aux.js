@@ -186,8 +186,12 @@ export const findAsset = async (state, asset, schema) => {
   if (countOf) {
     const abi = countOf(asset)
     const contract = web3.eth.contract([abi]).at(abi.target)
-    proxyCount = await promisify(c => contract[abi.name].call([state.web3.proxy], c))
-    proxyCount = proxyCount.toNumber()
+    if (state.web3.proxy) {
+      proxyCount = await promisify(c => contract[abi.name].call([state.web3.proxy], c))
+      proxyCount = proxyCount.toNumber()
+    } else {
+      proxyCount = 0
+    }
     myCount = await promisify(c => contract[abi.name].call([state.web3.base.account], c))
     myCount = myCount.toNumber()
   }

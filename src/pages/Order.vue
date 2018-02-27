@@ -24,13 +24,13 @@
         <span v-if="simulationFailed">Match simulation failed. Order may have already been matched.</span>
       </div>
       <br />
-      <div v-if="matchStage === 'matching' || matchStage === 'settled'">
-        <v-progress-circular v-bind:size="17" style="margin-left: 13px; margin-right: 17px;" v-if="matchStage === 'matching'" v-bind:indeterminate="true"></v-progress-circular>
+      <div v-if="matchStage === 'matching' || matchStage === 'settled'" class="matching">
+        <v-progress-circular v-bind:size="17" style="margin-left: 13px; margin-right: 13px;" v-if="matchStage === 'matching'" v-bind:indeterminate="true"></v-progress-circular>
         <v-icon v-if="matchStage === 'settled'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
         <span v-if="matchStage === 'matching'">
           Matching order...
           <span v-if="!matchTx">You will need to approve the transaction.</span>
-          <v-btn flat v-if="matchTx" target="_blank" :href="getUrl(matchTx)" style="position: relative;">View Transaction</v-btn>
+          <span v-if="matchTx">(<a target="_blank" :href="getUrl(matchTx)">view transaction</a>)</span>
         </span>
         <span v-if="matchStage === 'settled'">{{ order.asset.formatted.title }} has been transferred.</span>
       </div>
@@ -297,5 +297,13 @@ export default {
   background: #000;
   color: #fff;
   font-weight: bold;
+}
+
+.matching a {
+  color: #E12D32;
+}
+
+.matching a:hover {
+  text-decoration: underline;
 }
 </style>
