@@ -8347,10 +8347,11 @@ wyvern-js@0.1.1:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
-wyvern-schemas@^0.3.8:
-  version "0.3.8"
-  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.3.8.tgz#c6c39ca0df020fa64ba688facd11842f7f19187c"
+wyvern-schemas@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.4.2.tgz#1ed771f549953a865c28b212af88d01fa701d60d"
   dependencies:
+    "@0xproject/utils" "^0.3.4"
     axios "^0.17.1"
     babel-cli "^6.26.0"
     babel-plugin-transform-async-to-generator "^6.24.1"
