@@ -274,13 +274,13 @@ const atomicMatch = async ({ state, commit }, { buy, sell, asset, schema, onErro
     const required = buy.basePrice /* no buy-side auctions for now */
     var balance = await promisify(c => web3.eth.call({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'balanceOf'), [account])}, c))
     balance = new BigNumber(balance)
-    if (balance < required) {
+    if (balance.toNumber() < required.toNumber()) {
       if (buy.paymentToken === state.web3.tokens.canonicalWrappedEther.address) return onCheck(false, 'Insufficient balance. You may need to wrap Ether.')
       else return onCheck(false, 'Insufficient balance.')
     }
     var approved = await promisify(c => web3.eth.call({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'allowance'), [account, WyvernProtocol.getExchangeContractAddress(state.web3.base.network)])}, c))
     approved = new BigNumber(approved)
-    if (approved < required) {
+    if (approved.toNumber() < required.toNumber()) {
       onCheck(true, 'You must approve this token for use.')
       const txHash = await promisify(c => web3.eth.sendTransaction({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'approve'), [WyvernProtocol.getExchangeContractAddress(state.web3.base.network), WyvernProtocol.MAX_UINT_256.toString()])}, c))
       onCheck(true, 'Waiting for approval transaction to confirm...')

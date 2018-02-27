@@ -136,11 +136,13 @@ export default {
     this.$store.dispatch('fetchOrder', { hash: this.hash })
     const check = () => {
       if (this.$store.state.web3.base) {
-        setTimeout(() => { this.destination = this.destinations[0] }, 100)
-      }
-      else setTimeout(check, 100)
+        var dests = [{text: 'Personal Account', value: this.$store.state.web3.base.account}]
+        if (this.$store.state.web3.proxy) dests.push({text: 'Exchange Account', value: this.$store.state.web3.proxy})
+        this.destination = dests[0]
+        this.destinations = dests
+      } else setTimeout(check, 50)
     }
-    setTimeout(check, 100)
+    check()
   },
   destroyed: function () {
     this.$store.commit('untrackOrder', this.hash)
@@ -148,6 +150,7 @@ export default {
   data: function () {
     return {
       destination: null,
+      destinations: [],
       matchDialog: false,
       matchStage: null,
       matchTx: null,
@@ -193,12 +196,6 @@ export default {
     }
   },
   computed: {
-    destinations: function () {
-      if (!this.$store.state.web3.base) return []
-      var dests = [{text: 'Personal Account', value: this.$store.state.web3.base.account}]
-      if (this.$store.state.web3.proxy) dests.push({text: 'Exchange Account', value: this.$store.state.web3.proxy})
-      return dests
-    },
     transactionUrl: function () {
       const hash = this.order.settlement ? this.order.settlement.transactionHashIndex.slice(0, 66) : ''
       const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
