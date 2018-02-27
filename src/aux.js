@@ -12,7 +12,7 @@ import { method, ERC20, CanonicalWETH } from './abis/index.js'
 
 const encodeCall = WyvernSchemas.encodeCall
 
-const promisify = (inner) =>
+export const promisify = (inner) =>
   new Promise((resolve, reject) =>
     inner((err, res) => {
       if (err) { reject(err) }
@@ -168,7 +168,72 @@ const cancelOrder = async ({ state, commit }, { order, onTxHash, onConfirm }) =>
   })
 }
 
-const atomicMatch = async ({ state, commit }, { buy, sell, onError, onCheck, onTxHash, onConfirm }) => {
+export const findAsset = async (state, asset, schema) => {
+  var owner
+  const ownerOf = schema.functions.ownerOf
+  if (ownerOf) {
+    const abi = ownerOf(asset)
+    const contract = web3.eth.contract([abi]).at(abi.target)
+    if (abi.inputs.filter(x => x.value === undefined).length === 0) {
+      owner = await promisify(c => contract[abi.name].call(...abi.inputs.map(i => i.value.toString()), c))
+      owner = owner.toLowerCase()
+    }
+  }
+  /* This is a bit Ethercraft-specific. Not sure what other ERC20 pseudo-NFTs we might need to support. */
+  var proxyCount
+  var myCount
+  const countOf = schema.functions.countOf
+  if (countOf) {
+    const abi = countOf(asset)
+    const contract = web3.eth.contract([abi]).at(abi.target)
+    proxyCount = await promisify(c => contract[abi.name].call([state.web3.proxy], c))
+    proxyCount = proxyCount.toNumber()
+    myCount = await promisify(c => contract[abi.name].call([state.web3.base.account], c))
+    myCount = myCount.toNumber()
+  }
+  if (owner !== undefined) {
+    if (owner.toLowerCase() === state.web3.proxy.toLowerCase()) {
+      return 'proxy'
+    } else if (owner.toLowerCase() === state.web3.base.account.toLowerCase()) {
+      return 'account'
+    } else if (owner === '0x') {
+      return 'unknown'
+    } else {
+      return 'other'
+    }
+  } else if (myCount !== undefined && proxyCount !== undefined) {
+    if (proxyCount >= 1000000000000000000) {
+      return 'proxy'
+    } else if (myCount >= 1000000000000000000) {
+      return 'account'
+    } else {
+      return 'other'
+    }
+  }
+  return 'unknown'
+}
+
+const depositAsset = async ({ state, commit }, asset, schema, onTxHash, onConfirm) => {
+  const abi = schema.functions.transfer(asset)
+  const recipient = abi.inputs.filter(i => i.kind === 'replaceable')[0]
+  recipient.value = state.web3.proxy
+  const data = encodeCall(abi, abi.inputs.map(i => i.value.toString()))
+  const accounts = await promisify(web3.eth.getAccounts)
+  const account = accounts[0]
+  var obj = {to: abi.target, from: account, data: data, value: 0}
+  const result = await promisify(c => web3.eth.call(obj, c))
+  const estGas = await promisify(c => web3.eth.estimateGas(obj, c))
+  obj.gas = estGas
+  const txHash = await promisify(c => web3.eth.sendTransaction(obj, c))
+  commit('commitTx', { txHash: txHash, estGas: estGas, simulationResult: result })
+  onTxHash(txHash)
+  track(txHash, (success) => {
+    commit('mineTx', { txHash, success })
+    onConfirm(success)
+  })
+}
+
+const atomicMatch = async ({ state, commit }, { buy, sell, asset, schema, onError, onCheck, onTxHash, onConfirm }) => {
   const accounts = await promisify(web3.eth.getAccounts)
   const account = accounts[0]
 
@@ -181,6 +246,28 @@ const atomicMatch = async ({ state, commit }, { buy, sell, onError, onCheck, onT
     sell.v = buy.v
     sell.r = buy.r
     sell.s = buy.s
+  }
+
+  if (sell.maker.toLowerCase() === account.toLowerCase() && sell.feeRecipient === WyvernProtocol.NULL_ADDRESS) {
+    if (!state.web3.proxy) {
+      return onCheck(false, 'You must initialize your account before matching a purchase order. You can do so on the "Assets" page under "My Account" on the left.')
+    }
+    const where = await findAsset(state, asset, schema)
+    if (where === 'proxy') {
+    } else if (where === 'account') {
+      onCheck(true, 'You must first deposit this asset.')
+      await promisify(c => {
+        const onTxHash = (txHash) => onCheck(true, 'Awaiting transaction confirmation...')
+        const onConfirm = (success) => {
+          if (success) c(null, null)
+          else c(true, null)
+        }
+        depositAsset({ state, commit }, asset, schema, onTxHash, onConfirm)
+      })
+      onCheck(true, 'Rechecking order parameters...')
+    } else if (where === 'other') {
+      return onCheck(false, 'You do not own this asset.')
+    }
   }
 
   if (buy.maker.toLowerCase() === account.toLowerCase()) {

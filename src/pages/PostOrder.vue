@@ -16,10 +16,38 @@
       If you're trying to sell an asset, ensure you own the asset and that you've deposited it to your Exchange account.
     </v-card-text>
     <v-card-text v-else-if="posting">
-      <v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-bind:indeterminate="true"></v-progress-circular> 
+      <v-progress-circular v-bind:size="15" style="margin-left: 10px; margin-right: 10px;" v-bind:indeterminate="true"></v-progress-circular> 
+      <span v-if="authorizing">Authorize the order by signing it in Metamask.</span>
+      <span v-if="!authorizing">Order authorized, posting to orderbook.</span>
     </v-card-text>
     <v-card-actions>
       <v-btn color="primary" flat @click.stop="postDialog = false">Close</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+<v-dialog v-model="depositDialog" max-width="500px">
+  <v-card>
+    <v-card-title style="font-variant: small-caps; font-size: 1.4em;">
+      Deposit Asset
+    </v-card-title>
+    <v-card-text v-if="deposited">
+      <v-icon style="color: green; margin-left: 10px; margin-right: 10px;">
+      check_circle
+      </v-icon>
+      Deposited, refreshing.
+    </v-card-text>
+    <v-card-text v-else-if="depositFailed">
+      Deposit failed, check your transaction.
+    </v-card-text>
+    <v-card-text v-else-if="depositing">
+      <v-progress-circular v-bind:size="15" style="margin-left: 10px; margin-right: 10px;" v-bind:indeterminate="true"></v-progress-circular> 
+      <span v-if="!depositTx">Confirm deposit transaction in Metamask.</span>
+      <span v-if="depositTx">Waiting for transaction to confirm...
+        <v-btn flat target="_blank" :href="getUrl(depositTx)">View Transaction</v-btn>
+      </span>
+    </v-card-text>
+    <v-card-actions>
+      <v-btn color="primary" flat @click.stop="depositDialog = false">Close</v-btn>
     </v-card-actions>
   </v-card>
 </v-dialog>
@@ -64,8 +92,11 @@
       </v-radio-group>
       <div class="explainer">
       Sell-side orders allow you to sell a specific asset you already own. Buy-side orders allow you to buy a particular asset, or to buy any asset with certain characteristics.
+      <v-alert icon="priority_high" v-if="side === 'sell' && !proxy" value="true" outline :style="alertStyle" class="alert">
+      To sell an asset, you need to first initialize your account, which you can do on the <router-link to="/account/assets">Account page</router-link>.
+      </v-alert>
       </div><br />
-      <v-btn :disabled="!side" color="primary" @click.native="step = 3">Continue</v-btn>
+      <v-btn :disabled="!side || side === 'sell' && !proxy" color="primary" @click.native="step = 3">Continue</v-btn>
       <v-btn @click.native="side = null; step = 1" flat>Back</v-btn>
     </v-stepper-content>
     <v-stepper-content step="3">
@@ -78,7 +109,24 @@
           <v-text-field v-if="field.type !== 'enum'" @input="unifyValues(); valueChange()" v-model="values[field.name]" style="max-width: 600px;" :label="field.name + ' (' + field.type + ') - ' + field.description" :name="field.name" :readonly="field.readOnly"></v-text-field>
         </div>
       </div>
-      <v-btn color="primary" @click.native="step = 4">Continue</v-btn>
+      <div style="margin-bottom: 1em;" class="checkingTransfer">
+        <span v-if="checkingTransfer">
+          <v-progress-circular v-bind:size="15" style="margin-right: 10px;" v-bind:indeterminate="true"></v-progress-circular>
+          Checking ability to transfer asset...
+        </span>
+        <span v-if="!checkingTransfer && !canTransfer">
+          <v-icon style="color: red; margin-right: 10px;">error</v-icon>
+          Asset cannot be transferred - 
+          <span v-if="transferError === 'not_found'">asset not found.</span>
+          <span v-if="transferError === 'must_deposit'">you must <a @click.stop="deposit()">deposit it</a> first.</span>
+          <span v-if="transferError === 'not_yours'">you do not own it.</span>
+        </span>
+        <span v-if="!checkingTransfer && canTransfer">
+          <v-icon style="color: green; margin-right: 10px;">check_circle</v-icon>
+          Asset can be transferred.
+        </span>
+      </div>
+      <v-btn :disabled="!canTransfer" color="primary" @click.native="step = 4">Continue</v-btn>
       <v-btn @click.native="step = 2; values = {}; valueChange()" flat>Back</v-btn>
     </v-stepper-content>
     <v-stepper-content step="4">
@@ -126,13 +174,14 @@
 
 <script>
 import BigNumber from 'bignumber.js'
+import _ from 'lodash'
 
-import { encodeSell, encodeBuy } from 'wyvern-schemas'
+import { encodeCall, encodeSell, encodeBuy } from 'wyvern-schemas'
 import { feeRecipient } from 'wyvern-exchange'
 
 import Order from '../components/Order'
 import Schema from '../components/Schema'
-import { WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
+import { findAsset, WyvernProtocol, protocolInstance, orderToJSON } from '../aux'
 
 const clone = (obj) => JSON.parse(JSON.stringify(obj))
 
@@ -149,16 +198,37 @@ export default {
   metaInfo: {
     title: 'Post Order'
   },
+  created: function () {
+    if (this.step === 3) {
+      const check = () => {
+        if (this.ready) {
+          setTimeout(this.checkTransfer, 500)
+        } else {
+          setTimeout(check, 100)
+        }
+      }
+      check()
+    }
+  },
   data: function () {
     const query = this.$route.query
     const step = query.step ? parseInt(query.step) : 1
     return {
+      authorizing: false,
       postDialog: false,
       postFailed: false,
       postError: null,
       posting: false,
       posted: false,
+      depositDialog: false,
+      depositFailed: false,
+      depositing: false,
+      deposited: false,
+      depositTx: null,
       catfilter: '',
+      checkingTransfer: true,
+      transferError: null,
+      canTransfer: false,
       step: step,
       side: query.side ? query.side : null,
       category: query.category !== undefined ? query.category : null,
@@ -179,6 +249,12 @@ export default {
     }
   },
   computed: {
+    alertStyle: function () {
+      return {color: this.$vuetify.theme.primary + ' !important', marginTop: '2em'}
+    },
+    proxy: function () {
+      return !this.ready ? null : this.$store.state.web3.proxy
+    },
     ready: function () {
       return !!this.$store.state.web3.base
     },
@@ -214,8 +290,6 @@ export default {
       return this.saleKind === 0 ? 0 : Math.abs(this.amount - this.endingPrice)
     },
     order: function () {
-      console.log(this.values)
-      try {
       const account = this.$store.state.web3.base ? this.$store.state.web3.base.account : ''
       const token = this.tokens.filter(t => t.address === this.token)[0]
       const asset = this.schema.assetFromFields(this.values)
@@ -244,7 +318,6 @@ export default {
         metadata: this.metadata
       }
       return order
-      } catch (err) { console.log(err) }
     },
     metadata: function () {
       return {
@@ -261,6 +334,75 @@ export default {
     amount: bind('amount')
   },
   methods: {
+    getUrl: function (hash) {
+      const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
+        ? (this.$store.state.web3.base.network + '.') : ''
+      return 'https://' + prefix + 'etherscan.io/tx/' + hash
+    },
+    deposit: function () {
+      this.depositFailed = false
+      this.deposited = false
+      this.depositTx = null
+      this.depositing = true
+      this.depositDialog = true
+      const asset = this.schema.assetFromFields(this.values)
+      const abi = this.schema.functions.transfer(asset)
+      const recipient = abi.inputs.filter(i => i.kind === 'replaceable')[0]
+      recipient.value = this.$store.state.web3.proxy
+      const data = encodeCall(abi, abi.inputs.map(i => i.value.toString()))
+      const onConfirm = (ok) => {
+        this.depositing = false
+        if (ok) {
+          this.deposited = true
+          setTimeout(() => {
+            this.depositDialog = false
+            this.checkTransfer()
+          }, 1500)
+        } else {
+          this.depositFailed = true
+        }
+      }
+      const onTxHash = (txHash) => {
+        this.depositTx = txHash
+      }
+      const onError = () => {
+        this.depositing = false
+        this.depositFailed = true
+      }
+      this.$store.dispatch('rawSend', { target: abi.target, data: data, amount: 0, onError: onError, onTxHash: onTxHash, onConfirm: onConfirm })
+    },
+    checkTransfer: _.debounce(async function () {
+      this.checkingTransfer = true
+      this.transferError = null
+      const asset = this.schema.assetFromFields(this.values)
+      const where = await findAsset(this.$store.state, asset, this.schema)
+      if (this.side === 'buy') {
+        if (where === 'unknown') {
+          this.canTransfer = false
+          this.transferError = 'not_found'
+          this.checkingTransfer = false
+        } else {
+          this.canTransfer = true
+          this.checkingTransfer = false
+        }
+      } else {
+        if (where === 'proxy') {
+          this.canTransfer = true
+          this.checkingTransfer = false
+        } else if (where === 'account') {
+          this.canTransfer = false
+          this.transferError = 'must_deposit'
+          this.checkingTransfer = false
+        } else if (where === 'other') {
+          this.canTransfer = false
+          this.transferError = 'not_yours'
+          this.checkingTransfer = false
+        } else if (where === 'unknown') {
+          this.canTransfer = true
+          this.checkingTransfer = false
+        }
+      }
+    }, 500),
     valueChange: function () {
       const query = clone(this.$route.query)
       if (Object.keys(this.values).length > 0) {
@@ -269,6 +411,7 @@ export default {
         delete query.values
       }
       this.$router.push({query: query})
+      this.checkTransfer()
     },
     unifyValues: function () {
       if (this.schema.unifyFields) {
@@ -277,6 +420,7 @@ export default {
     },
     post: async function () {
       this.postDialog = true
+      this.authorizing = true
       this.posting = true
       this.posted = false
       this.postFailed = false
@@ -284,6 +428,7 @@ export default {
       var signature
       try {
         signature = await protocolInstance.signOrderHashAsync(order.hash, this.order.maker)
+        this.authorizing = false
       } catch (err) {
         this.postFailed = true
         this.postError = 'Signature rejected!'
@@ -326,5 +471,13 @@ export default {
 
 a {
   color: #E12D32;
+}
+
+.alert a:hover {
+  text-decoration: underline;
+}
+
+.checkingTransfer a:hover {
+  text-decoration: underline;
 }
 </style>

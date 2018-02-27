@@ -10,25 +10,27 @@
         <v-progress-circular v-bind:size="20" style="margin-left: 10px; margin-right: 10px; top: 5px;" v-if="matchStage === 'checking' && !checkFailed" v-bind:indeterminate="true"></v-progress-circular>
         <v-icon v-if="matchStage === 'checking' && checkFailed" style="color: red; margin-left: 10px; margin-right: 10px;">error</v-icon>
         <v-icon v-if="matchStage !== 'checking'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
-        <span v-if="!checkError">Checking order parameters and token balances...</span>
+        <span v-if="matchStage === 'checking' && !checkError">Checking order parameters, token balances, and asset holdings...</span>
+        <span v-if="matchStage !== 'checking' && !checkError">Parameters validated.</span>
         <span v-if="checkError">{{ checkError }}</span>
       </div>
       <br />
       <div v-if="matchStage !== 'checking'">
-        <v-progress-circular v-bind:size="20" style="margin-left: 10px; margin-right: 10px; top: 5px;" v-if="matchStage === 'simulating' && !simulationFailed" v-bind:indeterminate="true"></v-progress-circular>
+        <v-progress-circular v-bind:size="17" style="margin-left: 13px; margin-right: 13px;" v-if="matchStage === 'simulating' && !simulationFailed" v-bind:indeterminate="true"></v-progress-circular>
         <v-icon v-if="matchStage === 'simulating' && simulationFailed" style="color: red; margin-left: 10px; margin-right: 10px;">error</v-icon>
         <v-icon v-if="matchStage === 'matching' || matchStage === 'settled'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
-        <span v-if="!simulationFailed">Simulating order settlement...</span>
+        <span v-if="matchStage === 'simulating' && !simulationFailed">Simulating order settlement...</span>
+        <span v-if="matchStage !== 'simulating' && !simulationFailed">Simulation successful.</span>
         <span v-if="simulationFailed">Match simulation failed. Order may have already been matched.</span>
       </div>
       <br />
       <div v-if="matchStage === 'matching' || matchStage === 'settled'">
-        <v-progress-circular v-bind:size="20" style="margin-left: 10px; margin-right: 10px; top: 5px;" v-if="matchStage === 'matching'" v-bind:indeterminate="true"></v-progress-circular>
+        <v-progress-circular v-bind:size="17" style="margin-left: 13px; margin-right: 17px;" v-if="matchStage === 'matching'" v-bind:indeterminate="true"></v-progress-circular>
         <v-icon v-if="matchStage === 'settled'" style="color: green; margin-left: 10px; margin-right: 10px;">check_circle</v-icon>
         <span v-if="matchStage === 'matching'">
           Matching order...
           <span v-if="!matchTx">You will need to approve the transaction.</span>
-          <v-btn flat v-if="matchTx" target="_blank" :href="getUrl(matchTx)" style="">View Transaction</v-btn>
+          <v-btn flat v-if="matchTx" target="_blank" :href="getUrl(matchTx)" style="position: relative;">View Transaction</v-btn>
         </span>
         <span v-if="matchStage === 'settled'">{{ order.asset.formatted.title }} has been transferred.</span>
       </div>
@@ -53,9 +55,9 @@
       Transaction rejected, this order may have already been matched or cancelled.
     </v-card-text>
     <v-card-text v-else-if="cancelling">
-      <v-progress-circular v-bind:size="40" style="margin-left: 20px;" v-bind:indeterminate="true"></v-progress-circular> 
-      <div v-if="!cancelTx" style="margin-top: 1em; margin-left: 1em;">You will need to approve the transaction.</div><br />
-      <v-btn v-if="cancelTx" target="_blank" :href="getUrl(cancelTx)" style="margin-top: 2em;">View Transaction</v-btn>
+      <v-progress-circular v-bind:size="15" style="margin-left: 10px; margin-right: 10px;" v-bind:indeterminate="true"></v-progress-circular> 
+      <span v-if="!cancelTx" style="margin-top: 1em; margin-left: 1em;">Approve the cancellation transaction in Metamask.</span>
+      <span v-if="cancelTx" style="margin-top: 1em; margin-left: 1em;">Awaiting transaction confirmation...</span> <v-btn v-if="cancelTx" target="_blank" :href="getUrl(cancelTx)" flat>View Transaction</v-btn>
     </v-card-text>
     <v-card-actions>
       <v-btn color="primary" flat @click.stop="cancelDialog = false">Close</v-btn>
@@ -80,7 +82,7 @@ Order {{ hash }}
 <div style="text-align: center; line-height: 4em;">
 <div class="saleInfo">
 <div class="side">{{ side }}</div>
-{{ expiry }} by <router-link :to="'/accounts/' + order.settlement.maker">{{ order.settlement.maker }}</router-link> <br />to <router-link :to="'/accounts/' + order.settlement.taker">{{ order.settlement.taker }}</router-link> for
+{{ expiry }} by <router-link :to="'/accounts/' + order.settlement.maker">{{ order.settlement.maker }}</router-link> <br />{{ action }} <router-link :to="'/accounts/' + order.settlement.taker">{{ order.settlement.taker }}</router-link> for
 <div v-if="price !== null" class="price">{{ price }} {{ token.symbol }}</div>
 </div>
 <v-btn target="_blank" :href="transactionUrl">View Transaction</v-btn>
@@ -101,7 +103,10 @@ Order {{ hash }}
 This order has been cancelled.
 </div>
 </v-flex>
-<v-flex xs12 v-else-if="order && !order.settlement">
+<v-flex xs12 v-else-if="schema && order && !order.settlement && $store.state.web3.base">
+<div v-if="!mine && order.side === 1" style="margin: 0 auto; width: 200px; margin-bottom: 1em;">
+  <v-select :items="destinations" v-model="destination" label="Deliver To" item-text="text" item-value="address"></v-select>
+</div>
 <div style="margin: 0 auto; width: 100px;">
 <v-btn v-if="mine" raised @click.native="cancel()">Cancel</v-btn>
 <v-btn v-if="!mine" raised @click.native="match()">Match</v-btn>
@@ -129,12 +134,20 @@ export default {
   },
   created: function () {
     this.$store.dispatch('fetchOrder', { hash: this.hash })
+    const check = () => {
+      if (this.$store.state.web3.base) {
+        setTimeout(() => { this.destination = this.destinations[0] }, 100)
+      }
+      else setTimeout(check, 100)
+    }
+    setTimeout(check, 100)
   },
   destroyed: function () {
     this.$store.commit('untrackOrder', this.hash)
   },
   data: function () {
     return {
+      destination: null,
       matchDialog: false,
       matchStage: null,
       matchTx: null,
@@ -171,7 +184,7 @@ export default {
       this.simulationFailed = false
       this.checkFailed = false
       this.matchDialog = true
-      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, onCheck: onCheck, onError: onError, onTxHash: onTxHash, onConfirm: onConfirm })
+      this.$store.dispatch('atomicMatch', { buy: buy, sell: sell, asset: this.order.metadata.asset, schema: this.schema, onCheck: onCheck, onError: onError, onTxHash: onTxHash, onConfirm: onConfirm })
     },
     getUrl: function (hash) {
       const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
@@ -180,6 +193,12 @@ export default {
     }
   },
   computed: {
+    destinations: function () {
+      if (!this.$store.state.web3.base) return []
+      var dests = [{text: 'Personal Account', value: this.$store.state.web3.base.account}]
+      if (this.$store.state.web3.proxy) dests.push({text: 'Exchange Account', value: this.$store.state.web3.proxy})
+      return dests
+    },
     transactionUrl: function () {
       const hash = this.order.settlement ? this.order.settlement.transactionHashIndex.slice(0, 66) : ''
       const prefix = (this.$store.state.web3.base && this.$store.state.web3.base.network !== 'main')
@@ -200,6 +219,9 @@ export default {
     side: function () {
       return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For purchase' : 'For sale')
     },
+    action: function () {
+      return this.order.side === 0 ? 'from' : 'to'
+    },
     price: function () {
       return this.token ? (this.order.settlement ? parseFloat(WyvernProtocol.toUnitAmount(this.order.settlement.price, this.token.decimals)) : (this.order && this.order.currentPrice ? parseFloat(WyvernProtocol.toUnitAmount(this.order.currentPrice, this.token.decimals)) : null)) : null
     },
@@ -217,11 +239,11 @@ export default {
     },
     orderToMatch: function () {
       if (!this.order || !this.$store.state.web3.base || !this.schema) return {}
-      const account = this.$store.state.web3.base.account
+      const account = this.destination.value
       const { target, calldata, replacementPattern } = this.order.side === 0 ? encodeSell(this.schema, this.order.metadata.asset) : encodeBuy(this.schema, this.order.metadata.asset, account)
       return {
         exchange: this.order.exchange,
-        maker: account,
+        maker: this.$store.state.web3.base.account,
         taker: WyvernProtocol.NULL_ADDRESS,
         makerFee: new BigNumber(0),
         takerFee: new BigNumber(0),
