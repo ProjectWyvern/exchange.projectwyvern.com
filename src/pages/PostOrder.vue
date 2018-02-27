@@ -42,8 +42,8 @@
     <v-card-text v-else-if="depositing">
       <v-progress-circular v-bind:size="15" style="margin-left: 10px; margin-right: 10px;" v-bind:indeterminate="true"></v-progress-circular> 
       <span v-if="!depositTx">Confirm deposit transaction in Metamask.</span>
-      <span v-if="depositTx">Waiting for transaction to confirm...
-        <v-btn flat target="_blank" :href="getUrl(depositTx)">View Transaction</v-btn>
+      <span class="depositTx" v-if="depositTx">Waiting for transaction to confirm...
+        (<a target="_blank" :href="getUrl(depositTx)">view transaction</a>)
       </span>
     </v-card-text>
     <v-card-actions>
@@ -121,7 +121,11 @@
           <span v-if="transferError === 'must_deposit'">you must <a @click.stop="deposit()">deposit it</a> first.</span>
           <span v-if="transferError === 'not_yours'">you do not own it.</span>
         </span>
-        <span v-if="!checkingTransfer && canTransfer">
+        <span v-if="!checkingTransfer && canTransfer && transferUnknown">
+          <v-icon style="color: grey; margin-right: 10px;">warning</v-icon>
+          Asset transferability status unknown.
+        </span>
+        <span v-if="!checkingTransfer && canTransfer && !transferUnknown">
           <v-icon style="color: green; margin-right: 10px;">check_circle</v-icon>
           Asset can be transferred.
         </span>
@@ -227,6 +231,7 @@ export default {
       depositTx: null,
       catfilter: '',
       checkingTransfer: true,
+      transferUnknown: false,
       transferError: null,
       canTransfer: false,
       step: step,
@@ -374,6 +379,7 @@ export default {
     checkTransfer: _.debounce(async function () {
       this.checkingTransfer = true
       this.transferError = null
+      this.transferUnknown = false
       const asset = this.schema.assetFromFields(this.values)
       const where = await findAsset(this.$store.state, asset, this.schema)
       if (this.side === 'buy') {
@@ -399,6 +405,7 @@ export default {
           this.checkingTransfer = false
         } else if (where === 'unknown') {
           this.canTransfer = true
+          this.transferUnknown = true
           this.checkingTransfer = false
         }
       }
@@ -478,6 +485,10 @@ a {
 }
 
 .checkingTransfer a:hover {
+  text-decoration: underline;
+}
+
+.depositTx a:hover {
   text-decoration: underline;
 }
 </style>
