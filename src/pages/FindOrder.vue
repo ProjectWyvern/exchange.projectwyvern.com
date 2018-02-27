@@ -58,11 +58,11 @@ export default {
       setTimeout(this.reload, 10)
     },
     next: function () {
-      this.offset += 100
+      this.offset += 20
       this.reload()
     },
     previous: function () {
-      this.offset -= 100
+      this.offset -= 20
       this.reload()
     },
     reload: function () {

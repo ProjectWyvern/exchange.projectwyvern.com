@@ -55,16 +55,16 @@ export default {
   },
   methods: {
     previous: function () {
-      this.offset -= 100
+      this.offset -= 20
       this.reload()
     },
     next: function () {
-      this.offset += 100
+      this.offset += 20
       this.reload()
     },
     reload: async function () {
       this.assets = null
-      const assets = await wyvernExchange.assets({owner: this.address.toLowerCase(), limit: 100, offset: this.offset})
+      const assets = await wyvernExchange.assets({owner: this.address.toLowerCase(), limit: 20, offset: this.offset})
       this.assets = assets
     }
   },

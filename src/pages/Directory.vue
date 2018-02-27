@@ -84,16 +84,16 @@ export default {
       if (schema === null) delete query.schema
       if (this.sort) query.order = this.sort
       if (sort) query.order = sort
-      query.limit = 100
+      query.limit = 20
       query.offset = this.offset
       this.assetResult = await wyvernExchange.assets(query)
     },
     next: function () {
-      this.offset += 100
+      this.offset += 20
       this.reload()
     },
     previous: function () {
-      this.offset -= 100
+      this.offset -= 20
       this.reload()
     }
   },
