@@ -9,7 +9,7 @@
     <v-select style="width: 33%; display: inline-block;" @change="(sort) => reload(undefined, sort)" v-bind:items="sorts" v-model="sort" label="Sort" item-text="name" item-value="id" hide-details></v-select>
     <div style="float: right;">
       <v-btn @click.stop="previous" flat :disabled="offset === 0">Previous Page</v-btn>
-      <v-btn @click.stop="next" flat :disabled="assets.length < 20">Next Page</v-btn>
+      <v-btn @click.stop="next" flat :disabled="!assets || assets.length < 20">Next Page</v-btn>
     </div>
   </v-flex>
   <v-flex md3 hidden-xs-only></v-flex>

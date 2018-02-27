@@ -5,7 +5,7 @@
 Account History (settled orders)
 <div style="float: right; padding-right: 8em;">
   <v-btn @click.stop="previous" flat :disabled="offset === 0">Previous Page</v-btn>
-  <v-btn @click.stop="next" flat :disabled="orders.length < 20">Next Page</v-btn>
+  <v-btn @click.stop="next" flat :disabled="!orders || orders.length < 20">Next Page</v-btn>
 </div>
 </v-flex>
 <v-flex v-if="orders" xs12>
