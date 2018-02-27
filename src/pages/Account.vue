@@ -5,7 +5,7 @@
 Account {{ address }}
 <div style="float: right; padding-right: 8em;">
   <v-btn @click.stop="previous" flat :disabled="offset === 0">Previous Page</v-btn>
-  <v-btn @click.stop="next" flat>Next Page</v-btn>
+  <v-btn @click.stop="next" flat :disabled="assets.length < 20">Next Page</v-btn>
 </div>
 </v-flex>
 <v-flex xs12 v-if="assets">

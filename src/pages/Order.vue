@@ -211,7 +211,7 @@ export default {
       return !this.order ? '' : this.tokens.filter(t => t.address.toLowerCase() === this.order.paymentToken.toLowerCase())[0]
     },
     expiry: function () {
-      return !this.order ? '' : (this.order.settlement ? moment(this.order.settlement.timestamp * 1000).fromNow() : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires at ' + (new Date(this.order.expirationTime.toNumber() * 1000)).toString())
+      return !this.order ? '' : (this.order.settlement ? moment(this.order.settlement.timestamp * 1000).fromNow() : this.order.expirationTime.equals(0) ? 'No Expiration' : 'Expires ' + moment(this.order.expirationTime.toNumber() * 1000).fromNow())
     },
     side: function () {
       return this.order.settlement ? (this.order.side === 0 ? 'Purchased' : 'Sold') : (this.order.side === 0 ? 'For purchase' : 'For sale')

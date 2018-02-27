@@ -3,6 +3,10 @@
 <v-layout row wrap>
 <v-flex xs12 style="line-height: 2em; margin-bottom: 1em; text-align: center; font-variant: small-caps; font-size: 1.5em;">
 Account History (settled orders)
+<div style="float: right; padding-right: 8em;">
+  <v-btn @click.stop="previous" flat :disabled="offset === 0">Previous Page</v-btn>
+  <v-btn @click.stop="next" flat :disabled="orders.length < 20">Next Page</v-btn>
+</div>
 </v-flex>
 <v-flex v-if="orders" xs12>
 <div class="holder" :style="{maxHeight: maxHeight + 'px'}">
@@ -26,6 +30,7 @@ Account History (settled orders)
 
 <script>
 import { wyvernExchange } from '../aux'
+import { bind } from '../misc'
 import Order from '../components/Order'
 
 export default {
@@ -35,28 +40,47 @@ export default {
     title: 'Account History'
   },
   data: function () {
+    const query = this.$route.query
     return {
-      orders: null
+      orders: null,
+      offset: query.offset ? parseInt(query.offset) : 0
     }
   },
   created: async function () {
-    const account = await (new Promise((resolve, reject) => {
+    await (new Promise((resolve, reject) => {
       const check = () => {
         if (this.$store.state.web3.base) resolve(this.$store.state.web3.base.account)
         else setTimeout(check, 100)
       }
       check()
     }))
-    const settlements = await wyvernExchange.settlements({account: account})
-    settlements.map(s => {
-      s.order.settlement = s
-    })
-    this.orders = settlements.map(s => s.order)
+    this.reload()
+  },
+  methods: {
+    previous: function () {
+      this.offset -= 20
+      this.reload()
+    },
+    next: function () {
+      this.offset += 20
+      this.reload()
+    },
+    reload: async function () {
+      this.orders = null
+      const settlements = await wyvernExchange.settlements({account: this.$store.state.web3.base.account, limit: 20, offset: this.offset})
+      settlements.map(s => {
+        s.order.settlement = s
+      })
+      this.orders = settlements.map(s => s.order)
+    }
   },
   computed: {
     maxHeight: function () {
       return window.innerHeight - 250
     }
+  },
+  watch: {
+    offset: bind('offset')
   }
 }
 </script>
