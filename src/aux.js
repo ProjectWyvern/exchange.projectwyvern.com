@@ -274,7 +274,7 @@ const atomicMatch = async ({ state, commit }, { buy, sell, asset, schema, onErro
     }
   }
 
-  if (buy.maker.toLowerCase() === account.toLowerCase()) {
+  if (sell.saleKind === 0 && buy.maker.toLowerCase() === account.toLowerCase()) {
     const required = buy.basePrice /* no buy-side auctions for now */
     var balance = await promisify(c => web3.eth.call({from: account, to: buy.paymentToken, data: encodeCall(method(CanonicalWETH, 'balanceOf'), [account])}, c))
     balance = new BigNumber(balance)
