@@ -532,8 +532,8 @@ export const bind = (store) => {
           if (myCount > 0 || proxyCount > 0) {
             const formatted = await s.formatter(asset)
             const hash = WyvernProtocol.getAssetHashHex(s.hash(asset), s.name)
-            for (var i = 0; i < myCount; i++) assets.push({proxy: false, asset: asset, schema: s, formatted: formatted, hash: hash})
-            for (i = 0; i < proxyCount; i++) assets.push({proxy: true, asset: asset, schema: s, formatted: formatted, hash: hash})
+            if (myCount > 0) assets.push({proxy: false, asset: asset, schema: s, formatted: formatted, hash: hash, count: myCount})
+            if (proxyCount > 0) assets.push({proxy: true, asset: asset, schema: s, formatted: formatted, hash: hash, count: proxyCount})
           }
           return assets
         }))

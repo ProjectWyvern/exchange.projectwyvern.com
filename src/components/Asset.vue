@@ -9,7 +9,7 @@
   <v-card-title primary-title>
     <div style="width: 80%;">
       <div style="width: 100%;">
-        <h3 style="display: inline-block;">{{ metadata ? metadata.title : '' }}</h3>
+        <h3 style="display: inline-block;">{{ metadata ? metadata.title : '' }}<span class="count">{{ asset.count ? ' x' + asset.count : '' }}</span></h3>
       </div>
       <div style="font-size: 0.9em; max-width: 100%; word-wrap: break-word;">{{ metadata ? metadata.description : '' }}</div><br />
     </div>
@@ -73,5 +73,9 @@ export default {
   image-rendering: auto;
   image-rendering: crisp-edges;
   image-rendering: pixelated;
+}
+
+.count {
+  margin-left: 1em;   
 }
 </style>
