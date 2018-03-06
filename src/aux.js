@@ -176,6 +176,10 @@ export const findAsset = async (state, asset, schema) => {
     const contract = web3.eth.contract([abi]).at(abi.target)
     if (abi.inputs.filter(x => x.value === undefined).length === 0) {
       owner = await promisify(c => contract[abi.name].call(...abi.inputs.map(i => i.value.toString()), c))
+      if (owner.length > 0) {
+        const index = abi.outputs.map((output, index) => [output, index]).filter(v => v[0].kind === 'owner')[0][1]
+        owner = owner[index]
+      }
       owner = owner.toLowerCase()
     }
   }
