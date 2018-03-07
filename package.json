@@ -32,7 +32,7 @@
     "vuex-persist": "^1.0.3",
     "wyvern-exchange": "^0.1.10",
     "wyvern-js": "0.1.1",
-    "wyvern-schemas": "^0.5.3"
+    "wyvern-schemas": "^0.5.4"
   },
   "scripts": {
     "lint": "scripts/lint.sh",
