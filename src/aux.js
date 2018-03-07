@@ -514,28 +514,31 @@ export const bind = (store) => {
     }
 
     {
-      const byIndexAssets = await Promise.all(schemas.filter(s => s.functions.assetsOfOwnerByIndex).map(async s => {
-        const assetsOfOwnerByIndex = s.functions.assetsOfOwnerByIndex
-        const contract = web3.eth.contract([assetsOfOwnerByIndex]).at(assetsOfOwnerByIndex.target)
-        var myAssets = []
-        var proxyAssets = []
-        const func = async (index, addr, proxy, array) => {
-          const result = await promisify(c => contract[assetsOfOwnerByIndex.name].call(addr, index, c))
-          const asset = assetsOfOwnerByIndex.assetFromOutputs(result)
-          if (asset !== null) {
-            const formatted = await s.formatter(asset)
-            const hash = WyvernProtocol.getAssetHashHex(s.hash(asset), s.name)
-            array.push({proxy: proxy, asset: asset, schema: s, formatted: formatted, hash: hash})
-            await func(index + 1, addr, proxy, array)
+      const byIndexAssets = await Promise.all(schemas.map(async s => {
+        const assets = await Promise.all(s.functions.assetsOfOwnerByIndex.map(async assetsOfOwnerByIndex => {
+          console.log(s, assetsOfOwnerByIndex)
+          const contract = web3.eth.contract([assetsOfOwnerByIndex]).at(assetsOfOwnerByIndex.target)
+          var myAssets = []
+          var proxyAssets = []
+          const func = async (index, addr, proxy, array) => {
+            const result = await promisify(c => contract[assetsOfOwnerByIndex.name].call(addr, index, c))
+            const asset = assetsOfOwnerByIndex.assetFromOutputs(result)
+            if (asset !== null) {
+              const formatted = await s.formatter(asset)
+              const hash = WyvernProtocol.getAssetHashHex(s.hash(asset), s.name)
+              array.push({proxy: proxy, asset: asset, schema: s, formatted: formatted, hash: hash})
+              await func(index + 1, addr, proxy, array)
+            }
           }
-        }
-        if (proxy) {
-          await func(0, proxy, true, proxyAssets)
-        }
-        if (account) {
-          await func(0, account, false, myAssets)
-        }
-        return [].concat(...myAssets, ...proxyAssets)
+          if (proxy) {
+            await func(0, proxy, true, proxyAssets)
+          }
+          if (account) {
+            await func(0, account, false, myAssets)
+          }
+          return [].concat(...myAssets, ...proxyAssets)
+        }))
+        return [].concat(...assets)
       }))
 
       /* This is very Ethercraft-specific. */
