@@ -384,8 +384,9 @@ export default {
       const where = await findAsset(this.$store.state, asset, this.schema)
       if (this.side === 'buy') {
         if (where === 'unknown') {
-          this.canTransfer = false
-          this.transferError = 'not_found'
+          this.canTransfer = true
+          // this.transferError = 'not_found'
+          this.transferUnknown = true
           this.checkingTransfer = false
         } else {
           this.canTransfer = true
