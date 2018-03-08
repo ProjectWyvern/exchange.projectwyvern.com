@@ -199,7 +199,7 @@ export const findAsset = async (state, asset, schema) => {
     myCount = await promisify(c => contract[abi.name].call([state.web3.base.account], c))
     myCount = myCount.toNumber()
   }
-  if (owner !== undefined) {
+  if (owner !== undefined && owner !== '0') {
     if (owner.toLowerCase() === state.web3.proxy.toLowerCase()) {
       return 'proxy'
     } else if (owner.toLowerCase() === state.web3.base.account.toLowerCase()) {
@@ -516,7 +516,6 @@ export const bind = (store) => {
     {
       const byIndexAssets = await Promise.all(schemas.map(async s => {
         const assets = await Promise.all(s.functions.assetsOfOwnerByIndex.map(async assetsOfOwnerByIndex => {
-          console.log(s, assetsOfOwnerByIndex)
           const contract = web3.eth.contract([assetsOfOwnerByIndex]).at(assetsOfOwnerByIndex.target)
           var myAssets = []
           var proxyAssets = []
