@@ -523,9 +523,17 @@ export const bind = (store) => {
             const result = await promisify(c => contract[assetsOfOwnerByIndex.name].call(addr, index, c))
             const asset = assetsOfOwnerByIndex.assetFromOutputs(result)
             if (asset !== null) {
-              const formatted = await s.formatter(asset)
-              const hash = WyvernProtocol.getAssetHashHex(s.hash(asset), s.name)
-              array.push({proxy: proxy, asset: asset, schema: s, formatted: formatted, hash: hash})
+              var owner
+              if (s.functions.ownerOf) {
+                const ownerOf = s.functions.ownerOf(asset)
+                const contract = web3.eth.contract([ownerOf]).at(ownerOf.target)
+                owner = await promisify(c => contract[ownerOf.name].call(ownerOf.inputs[0].value, c))
+              }
+              if (owner === undefined || owner === addr) {
+                const formatted = await s.formatter(asset)
+                const hash = WyvernProtocol.getAssetHashHex(s.hash(asset), s.name)
+                array.push({proxy: proxy, asset: asset, schema: s, formatted: formatted, hash: hash})
+              }
               await func(index + 1, addr, proxy, array)
             }
           }
@@ -539,6 +547,10 @@ export const bind = (store) => {
         }))
         return [].concat(...assets)
       }))
+
+      if (store.state.web3.assets === undefined) {
+        store.commit('setWeb3Assets', [].concat(...byIndexAssets))
+      }
 
       /* This is very Ethercraft-specific. */
       const countAssets = await Promise.all(schemas.filter(s => s.functions.countOf).map(async s => {
