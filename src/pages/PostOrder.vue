@@ -440,7 +440,7 @@ export default {
       } catch (err) {
         this.postFailed = true
         this.postError = 'Signature rejected!'
-        return
+        throw err
       }
       order.v = signature.v
       order.r = signature.r
