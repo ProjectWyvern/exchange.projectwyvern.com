@@ -10,7 +10,7 @@
       <div v-if="transferTarget !== ''">This will transfer ownership of {{ transferAssetTitle }} to {{ transferTarget }}.</div>
       </v-card-text>
     <v-card-actions>
-      <v-btn color="primary" :disabled="transferTarget === ''" @click.stop="transfer()">Transfer</v-btn>
+      <v-btn color="primary" :disabled="transferTarget === ''" @click.stop="transfer(transferProxy)">Transfer</v-btn>
       <v-btn color="primary" flat @click.stop="transferDialog = false">Cancel</v-btn>
       </v-card-actions>
     </v-card>
@@ -83,6 +83,7 @@ export default {
       personalFilter: '',
       exchangeFilter: '',
       transferDialog: false,
+      transferProxy: false,
       transferAsset: null,
       transferTarget: ''
     }
@@ -113,10 +114,10 @@ export default {
       this.transferDialog = false
     },
     makeMenu: function (asset, proxy) {
-      const transfer = () => { this.transferAsset = asset; this.transferDialog = true }
+      const transfer = () => { this.transferProxy = proxy; this.transferAsset = asset; this.transferDialog = true }
       var items = [
         proxy ? {title: 'Withdraw', func: () => this.withdraw(asset)} : {title: 'Deposit', func: () => this.deposit(asset)},
-        {title: 'Transfer', func: () => transfer(proxy)}
+        {title: 'Transfer', func: () => transfer()}
       ]
       if (proxy && asset.schema.assetToFields) {
         items.unshift({
