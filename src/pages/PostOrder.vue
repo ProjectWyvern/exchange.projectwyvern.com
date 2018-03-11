@@ -439,7 +439,7 @@ export default {
         this.authorizing = false
       } catch (err) {
         this.postFailed = true
-        this.postError = 'Signature rejected!'
+        this.postError = 'Signature rejected: ' + err.toString()
         throw err
       }
       order.v = signature.v
