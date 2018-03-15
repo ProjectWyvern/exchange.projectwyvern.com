@@ -13,3 +13,4 @@ cd ..
 git add docs
 git commit -m "Update wyvern-schemas to $VERSION (gh-pages)"
 git push
+rm -f yarn-error.log
