@@ -8347,9 +8347,9 @@ wyvern-js@0.1.1:
     web3 "^0.20.4"
     webpack "^3.10.0"
 
-wyvern-schemas@^0.6.8:
-  version "0.6.8"
-  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.6.8.tgz#9a8cf212d256c487029089aef4f9da9662a964ea"
+wyvern-schemas@^0.6.10:
+  version "0.6.10"
+  resolved "https://registry.yarnpkg.com/wyvern-schemas/-/wyvern-schemas-0.6.10.tgz#16171d5009c52b3c01136f225b1643d025eb71e1"
   dependencies:
     "@0xproject/utils" "^0.3.4"
     axios "^0.17.1"
