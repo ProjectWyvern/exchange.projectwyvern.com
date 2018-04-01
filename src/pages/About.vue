@@ -43,7 +43,7 @@ The Wyvern Protocol is governed by the <a href="https://dao.projectwyvern.com" t
 All application code is open-source. To request a fix or suggest an improvement, please open an issue or submit a pull request using the <a href="https://github.com/ProjectWyvern/exchange.projectwyvern.com">Github repository</a>.
 </p>
 <p>
-To learn more about the Wyvern project, visit <a href="https://projectwyvern.com" target="_blank">projectwyvern.com</a>. You can also follow us on <a href="https://twitter.com/WyvernExchange" target="_blank">Twitter</a> or <a href="https://medium.com/project-wyvern" target="_blank">Medium</a>.
+To learn more about the Wyvern project, visit <a href="https://projectwyvern.com" target="_blank">projectwyvern.com</a>. You can also follow us on <a href="https://twitter.com/WyvernProtocol" target="_blank">Twitter</a> or <a href="https://medium.com/project-wyvern" target="_blank">Medium</a>.
 </p>
 <p>
 For realtime support and discussion, join our <a href="https://discord.gg/dZZdybs">Discord</a>.
